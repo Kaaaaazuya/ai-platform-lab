@@ -61,7 +61,7 @@ M3までは型チェックとテスト、`terraform fmt` しかなく、リン�
 - install スクリプトを持つパッケージは許可リスト（`scripts/check-install-scripts.mjs`）で管理し、増えたらCIで止める。今の3つ（esbuild、fsevents、protobufjs）は、スクリプトがなくてもビルドとテストが通ることを確かめた
 - CIは `npm ci` だけを使う（lockfile と違えば失敗する）。`npm audit signatures` でレジストリの署名を、`npm audit --audit-level=high` で脆弱性を確かめる
 - 脆弱性への対応として OpenTelemetry SDK を 0.301 系に、vitest を 5 系に上げた。推移的依存の rimraf は `overrides` で上げた。`npm audit` は0件
-- Dependabot で npm、Actions、Docker、Terraform を週1回更新する。公開直後の版を避けるため cooldown（7日、メジャーは14日）を置く
+- Dependabot で npm、Actions、Docker、Terraform、pip を月1回更新する。公開直後の版を避けるため cooldown（7日、メジャーは14日）を置く（「Dependabotの運用」を参照）
 
 **CI とコンテナ**
 
@@ -86,7 +86,7 @@ M3までは型チェックとテスト、`terraform fmt` しかなく、リン�
 
 - [ ] compose.yaml で固定したタグがレジストリにあるか。タグの一覧はまだ確認できていない
     - aigw `v1.2.1`、otel-collector `0.165.0`、otel-lgtm `0.41.0`、presidio `2.2.366`
-- [ ] Dependabot が compose.yaml の `${VAR:-tag}` 形式を更新対象として認識するか
+- [x] Dependabot が compose.yaml の `${VAR:-tag}` 形式を更新対象として認識するか → 認識しない。タグを直接書く形に改めた
 - [ ] trivy（イメージ・Terraform・Dockerfile）を入れるか
 
 ## CIの実行の絞り込み（2026-11-17 追加）
@@ -112,3 +112,31 @@ M3までは型チェックとテスト、`terraform fmt` しかなく、リン�
 | どれでも | changes、secrets |
 
 ブランチ保護で必須のチェックを決めるときは、飛ばされたジョブの結果が「skipped」として扱われる点を考える。必須にするなら、常に動く `changes` と `secrets` か、全ジョブの結果をまとめるジョブを用意する。
+
+## Dependabotの運用（2026-11-17 追加）
+
+### 見えた問題
+
+- ライブラリ1つごとにPRが出ていた。Actions だけで4件あり、PRごとに CI と CodeRabbit が動く。CodeRabbit は1時間に10回までなので、まとめて来ると枠が足りなくなる
+- compose.yaml で `${AIGW_IMAGE_TAG:-v1.2.1}` のように変数で書いたタグを、Dependabot は読めない。そのため主役の Agent Router、Presidio、OTel Collector、Grafana、Langfuse の更新は届かない。届いていたのは、Langfuse が中で使う ClickHouse と Redis の更新だけだった
+- ClickHouse と Redis の版は、Langfuse の対応に合わせて決める。最新に上げると、Langfuse が動かなくなる恐れがある
+- ドキュメントのビルドに使う `docs/requirements.txt`（MkDocs など）は、更新の対象に入っていなかった
+
+### 決めたこと
+
+| 項目 | 前 | 後 |
+| --- | --- | --- |
+| 頻度 | 週1回 | 月1回（セキュリティ修正は頻度に関係なくすぐ届く） |
+| まとめ方 | ライブラリごと（npm の一部だけまとめていた） | 種類ごとに、マイナーとパッチで1件、メジャーで1件 |
+| compose のタグ | 変数で上書きできる書き方 | タグを直接書く。Dependabot が読める |
+| ClickHouse と Redis | Dependabot が最新を出す | 対象から外し、Langfuse の対応に合わせて手で上げる |
+| pip | 対象外 | 対象に入れる |
+| 作り直し（rebase） | 既定 | 既定のまま |
+
+作り直しは、既定のままにした。Dependabot は、main と競合したPRだけを作り直す。#14 のマージで多くのPRが作り直されたのは、どれも `ci.yml` を変えていて競合したからだ。作り直しを止めると、競合したPRを毎回手で直す手間が増える。PRをまとめてPRの数を減らす方が、効き目が大きい。
+
+### 影響
+
+- 変数でタグを上書きする使い方はなくなる。別の版を試したいときは、compose.yaml を書き換えるか、`compose.override.yaml` を使う
+- ClickHouse と Redis の更新は、Langfuse を上げるときに、Langfuse が出している compose の版と見比べて上げる
+

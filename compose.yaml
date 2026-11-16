@@ -73,7 +73,7 @@ services:
 
   # ---------- AI Gateway (Envoy AI Gateway / Agent Router) ----------
   aigw:
-    image: envoyproxy/ai-gateway-cli:${AIGW_IMAGE_TAG:-v1.2.1}
+    image: envoyproxy/ai-gateway-cli:v1.2.1
     command: ["run"]
     environment:
       # 設定ファイルなしで起動すると、OpenAI互換のバックエンド（Ollama）向け設定を自動生成する
@@ -103,7 +103,7 @@ services:
   # ---------- Guardrail (ADR-005) ----------
   # 汎用PII（メール・カード番号など）。日本向けのルールは app/api/src/guard.ts
   presidio-analyzer:
-    image: mcr.microsoft.com/presidio-analyzer:${PRESIDIO_IMAGE_TAG:-2.2.366}
+    image: mcr.microsoft.com/presidio-analyzer:2.2.366
     restart: unless-stopped
     ports:
       - 127.0.0.1:5002:3000
@@ -136,7 +136,7 @@ services:
 
   # ---------- Observability ----------
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:${OTELCOL_IMAGE_TAG:-0.165.0}
+    image: otel/opentelemetry-collector-contrib:0.165.0
     command: ["--config=/etc/otelcol/config.yaml"]
     environment:
       LANGFUSE_AUTH: ${LANGFUSE_AUTH:?run `make env` first}
@@ -149,7 +149,7 @@ services:
       - lgtm
 
   lgtm:
-    image: grafana/otel-lgtm:${LGTM_IMAGE_TAG:-0.41.0}
+    image: grafana/otel-lgtm:0.41.0
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
     ports:
@@ -159,14 +159,14 @@ services:
 
   # ---------- Langfuse ----------
   langfuse-worker:
-    image: docker.langfuse.com/langfuse/langfuse-worker:${LANGFUSE_IMAGE_TAG:-4}
+    image: docker.langfuse.com/langfuse/langfuse-worker:4
     restart: unless-stopped
     depends_on: *langfuse-depends
     environment:
       <<: *langfuse-env
 
   langfuse-web:
-    image: docker.langfuse.com/langfuse/langfuse:${LANGFUSE_IMAGE_TAG:-4}
+    image: docker.langfuse.com/langfuse/langfuse:4
     restart: unless-stopped
     depends_on: *langfuse-depends
     ports:

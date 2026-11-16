@@ -1,44 +1,77 @@
-# 依存の更新（ADR-013）。公開直後の版を避けるため cooldown を置く
+# 依存の更新（ADR-013）
+# - 学習用のリポジトリなので月1回にまとめて見る。セキュリティ修正は頻度に関係なくすぐ届く
+# - 種類ごとに、マイナーとパッチを1件、メジャーを1件のPRにまとめる
+# - 公開直後の版を避けるため cooldown を置く
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
       semver-major-days: 14
     groups:
-      opentelemetry:
-        patterns: ["@opentelemetry/*"]
-      dev-tools:
-        dependency-type: development
+      npm-minor:
+        applies-to: version-updates
+        update-types: [minor, patch]
+      npm-major:
+        applies-to: version-updates
+        update-types: [major]
     open-pull-requests-limit: 5
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
+    groups:
+      actions-minor:
+        update-types: [minor, patch]
+      actions-major:
+        update-types: [major]
 
+  # Langfuse が中で使うもの（ClickHouse、Redis）は、Langfuse の対応に合わせて手で上げる
   - package-ecosystem: docker-compose
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
+    ignore:
+      - dependency-name: "clickhouse/clickhouse-server"
+      - dependency-name: "redis"
+    groups:
+      compose-minor:
+        update-types: [minor, patch]
+      compose-major:
+        update-types: [major]
 
   - package-ecosystem: docker
     directory: /infra/aws-emulator
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
 
   - package-ecosystem: terraform
     directories: ["/terraform/envs/local", "/terraform/modules/chat-store"]
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
+    groups:
+      terraform:
+        patterns: ["*"]
+
+  # ドキュメントのビルドに使う MkDocs など
+  - package-ecosystem: pip
+    directory: /docs
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      docs-python:
+        patterns: ["*"]
