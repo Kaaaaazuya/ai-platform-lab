@@ -12,7 +12,17 @@ type Message = {
   sources?: Source[];
   traceId?: string;
   error?: string;
+  guard?: string[];
 };
+
+type GuardEvent = Extract<ChatEvent, { type: "guard" }>;
+
+// ガードレールの判定を画面に出す文言
+function guardNote(e: GuardEvent): string {
+  if (e.action === "block") return `ガードレールでブロックしました：${e.reason}`;
+  if (e.action === "mask") return `質問に含まれる個人情報をマスクしてから送信しました（${e.entities.join(", ")}）`;
+  return `回答に個人情報が含まれていたため、マスクした内容に差し替えました（${e.entities.join(", ")}）`;
+}
 
 export function App() {
   const [sessionId] = useState(() => crypto.randomUUID());
@@ -36,6 +46,12 @@ export function App() {
         if (e.type === "token") updateLast((m) => ({ ...m, text: m.text + e.text }));
         else if (e.type === "meta") updateLast((m) => ({ ...m, traceId: e.traceId }));
         else if (e.type === "sources") updateLast((m) => ({ ...m, sources: e.sources }));
+        else if (e.type === "guard")
+          updateLast((m) => ({
+            ...m,
+            text: e.action === "redact" ? e.text : m.text,
+            guard: [...(m.guard ?? []), guardNote(e)],
+          }));
         else if (e.type === "error") updateLast((m) => ({ ...m, error: e.message }));
       }
     } catch (err) {
@@ -58,6 +74,11 @@ export function App() {
         {messages.map((m, i) => (
           <article key={i} className={m.role}>
             <div className="text">{m.text || (busy && i === messages.length - 1 ? "…" : "")}</div>
+            {m.guard?.map((g, j) => (
+              <div key={j} className="guard">
+                {g}
+              </div>
+            ))}
             {m.error && <div className="error">エラー: {m.error}</div>}
             {m.sources && m.sources.length > 0 && (
               <ol className="sources">

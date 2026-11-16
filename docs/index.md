@@ -3,7 +3,7 @@
 国内外の社内AI基盤（Uber GenAI Gateway、デジタル庁「源内」、東京海上日動システムズの全社生成AI実行基盤など）に共通する「アプリ → AIゲートウェイ → 複数モデル」の構成を、個人のローカル環境で再現して学ぶ。基盤はAWS Emulator（2026年11月11日GA）とOSSで組み、実AWSは差分の検証だけに使う。
 
 !!! info "現在地"
-    ADRは12件で、ADR-001・002・004・006・011は決定済み。MVP（M1＋M2）を実装中。ADR-003・009はMVPのために仮決め（pgvector＋公開技術ドキュメント）。
+    ADRは12件で、ADR-001・002・004・005・006・011は決定済み。M1＋M2を実装済みで、M3（ガードレール）を実装中。ADR-003・009はMVPのために仮決め（pgvector＋公開技術ドキュメント）。
 
 ## 背景と目的
 
@@ -33,7 +33,8 @@ flowchart TB
       DATA["DynamoDB・S3<br/>会話履歴・原文書"]
     end
     VS["ベクトルストア<br/>pgvector"]
-    GW["AIゲートウェイ（Envoy AI Gateway）<br/>OpenAI互換API・振り分け・フォールバック・トークン上限<br/>ガードレールは外部処理で連携（ADR-005）"]
+    GW["AIゲートウェイ（Envoy AI Gateway）<br/>OpenAI互換API・振り分け・フォールバック・トークン上限"]
+    GR["ガードレール（ADR-005）<br/>Presidio＋日本向けルール・インジェクション検知"]
     OLLAMA["Ollama<br/>ローカルLLM（無料）"]
     COL["OTel Collector<br/>トレースIDを共通化し振り分け"]
     LF["Langfuse<br/>トレース・評価・プロンプト・データセット"]
@@ -46,6 +47,7 @@ flowchart TB
   UI --> API
   API --> DATA
   API --> VS
+  API --> GR
   API --> GW
   GW --> OLLAMA
   GW --> BR
@@ -72,7 +74,7 @@ flowchart TB
 | データ | S3 | RAGの原文書、インデックス用ファイル | AWS Emulator | — |
 | データ | ベクトルストア | 埋め込み検索 | pgvector（仮決め） | [003](adr/0003-vector-store.md) |
 | ゲートウェイ | AIゲートウェイ | OpenAI互換API、モデルの振り分け、フォールバック、トークン単位のレート制限、GenAIメトリクスとトレース | ローカル（Envoy AI Gateway、aigw run）。後でK8sに載せる | [002](adr/0002-ai-gateway.md) |
-| ゲートウェイ | ガードレール | PIIマスク、プロンプトインジェクション検知 | ローカル（候補: Presidio、LLM Guard。ゲートウェイの外部処理として連携） | [005](adr/0005-guardrails.md) |
+| アプリ | ガードレール | PIIマスク、プロンプトインジェクション検知 | ローカル（Presidio＋アプリ内の日本向けルール。アプリAPIから呼ぶ） | [005](adr/0005-guardrails.md) |
 | モデル | ローカルLLM | 普段の開発・評価を無料で回す | ローカル（Ollama） | [001](adr/0001-local-llm.md) |
 | モデル | Bedrock | 品質比較、Bedrock Guardrailsの検証 | 実AWS（必要時のみ） | [001](adr/0001-local-llm.md), [007](adr/0007-aws-budget.md) |
 | 観測 | OTel Collector | トレース・メトリクス・ログの集約と振り分け | ローカル | [004](adr/0004-observability.md) |
@@ -97,10 +99,10 @@ sequenceDiagram
     participant UI as チャットUI（S3＋CloudFront）
     participant AG as API Gateway（REST・ストリーミング）
     participant API as アプリAPI（Lambda・Node.js）
+    participant GR as ガードレール（Presidio＋独自ルール）
     participant DB as DynamoDB
     participant VS as ベクトルストア
     participant GW as AIゲートウェイ
-    participant GR as ガードレール
     participant LLM as Ollama / Bedrock
     participant OT as OTel Collector
 
@@ -108,23 +110,22 @@ sequenceDiagram
     UI->>AG: POST /chat（会話ID・認証トークン）
     AG->>AG: 認証
     AG->>API: ストリーミング呼び出し
-    API->>DB: 会話履歴を取得
-    API->>GW: 埋め込み要求（認証情報・traceparent）
-    GW->>LLM: embedding
-    LLM-->>GW: ベクトル
-    GW-->>API: ベクトル
-    API->>VS: 類似検索（top-k）
-    VS-->>API: 関連チャンク＋出典
-    API->>GW: 生成要求（stream: true）
-    GW->>GW: 認証・トークン上限チェック
-    GW->>GR: 入力検査（PIIマスク、インジェクション検知）
-    alt ブロック対象
-        GR-->>GW: 拒否
-        GW-->>API: 4xx（理由付き）
-        API-->>AG: エラーを書き出して終了
-        AG-->>UI: エラーを表示
+    API->>GR: 入力検査（PII検出、インジェクション検知）
+    alt インジェクションの疑い
+        GR-->>API: ブロック
+        API-->>AG: guard（block）を書き出して終了
+        AG-->>UI: ブロック理由を表示
     else 通過
-        GR-->>GW: マスク済みプロンプト
+        GR-->>API: マスク済みの質問
+        API->>DB: 会話履歴を取得
+        API->>GW: 埋め込み要求（マスク済み・traceparent）
+        GW->>LLM: embedding
+        LLM-->>GW: ベクトル
+        GW-->>API: ベクトル
+        API->>VS: 類似検索（top-k）
+        VS-->>API: 関連チャンク＋出典
+        API->>GW: 生成要求（stream: true）
+        GW->>GW: 認証・トークン上限チェック
         GW->>LLM: 生成（ストリーミング）
         loop トークンが出るたび
             LLM-->>GW: トークン
@@ -132,13 +133,16 @@ sequenceDiagram
             API-->>AG: チャンクを書き出す
             AG-->>UI: チャンクを表示
         end
-        GW->>GR: 出力検査（全文）
+        API->>GR: 出力検査（全文）
+        opt PIIを検出
+            API-->>UI: guard（redact）でマスク後の全文に差し替え
+        end
         API-->>AG: 引用元を書き出して終了
         AG-->>UI: 引用元を表示
+        API->>DB: 履歴を保存（マスク後）
     end
-    GW-)OT: トレース（gen_ai.* 属性）
-    API->>DB: 履歴を保存
-    API-)OT: アプリのログ・メトリクス
+    GW-)OT: トレース（gen_ai.*、出力本文は記録しない）
+    API-)OT: ガード判定・検索・回答のspan（マスク後）
 ```
 
 ### 2. 改善のアウターループ
@@ -156,8 +160,8 @@ sequenceDiagram
     participant EM as AWS Emulator
     participant EV as 評価ランナー
 
-    API-)OT: 検索spanなど（trace_id付き）
-    GW-)OT: ガードレール・LLM span（gen_ai.*）
+    API-)OT: ガードレール・検索spanなど（trace_id付き）
+    GW-)OT: LLM span（gen_ai.*）
     OT-)LF: 1本のトレースとして送信
     U->>API: 回答へのフィードバック
     API->>LF: スコアをtrace_idに紐付け
@@ -193,10 +197,10 @@ sequenceDiagram
 
 ### セキュリティ
 
-- 入力側：PIIマスク、プロンプトインジェクション検知をゲートウェイで必ず通す
+- 入力側：PIIマスク、プロンプトインジェクション検知をアプリAPIで必ず通す（ADR-005。アプリを経由しない呼び出しが増えたらゲートウェイ側へ移す）
 - 出力側：機密情報の漏洩チェック、引用元のない回答の検出
 - 鍵管理：プロバイダの本物の鍵はゲートウェイだけが持ち、アプリには自分用の認証情報だけを渡す
-- ログの扱い：プロンプト本文を記録するか、マスク後だけ記録するかを決める（[ADR-005](adr/0005-guardrails.md)）
+- ログの扱い：マスク後の本文だけを記録する。ゲートウェイは生成結果の本文をspanに残さない（[ADR-005](adr/0005-guardrails.md)）
 - IAM：AWS EmulatorはIAMポリシーを実AWSと同じようには評価しない。権限の検証は実AWSで行う（[ADR-007](adr/0007-aws-budget.md)）
 
 ### 改善のアウターループ
@@ -206,7 +210,7 @@ OTelで追ったトレースをそのまま改善ループの入力にする。�
 | OTelで取る信号 | 取る場所（span） | 改善ループでの使い方 |
 | --- | --- | --- |
 | 検索結果の件数・スコア | アプリAPIの検索span | 関連文書が取れていない質問を抽出し、検索側（チャンク分割・埋め込み）の改善対象にする |
-| ガードレールのブロック・マスク | ゲートウェイのガードレールspan | 誤検知・見逃しの例をデータセットにする |
+| ガードレールのブロック・マスク | アプリAPIのガードレールspan（`guard.*`属性） | 誤検知・見逃しの例をデータセットにする |
 | フォールバック・エラー・タイムアウト | ゲートウェイのLLM span | モデルとルーティング設定を見直す |
 | レイテンシ・トークン数・コスト | LLM spanのgen_ai.*属性 | CIの合格条件に、品質スコアと並べて入れる |
 | ユーザーフィードバック | アプリAPI（trace_idに紐付け） | 低評価のトレースを優先してデータセットに入れる |
@@ -280,7 +284,7 @@ flowchart LR
 
 ## 未解決事項とADR一覧
 
-ADRは12件で、ADR-001・002・004・006・011は決定済み。M1の前提になるADRは決まったので、M1に着手できる。残りは作りながら詰める。一覧は [ADR](adr/index.md) を参照。
+ADRは12件で、ADR-001・002・004・005・006・011は決定済み。残りは作りながら詰める。一覧は [ADR](adr/index.md) を参照。
 
 ## 参考資料
 

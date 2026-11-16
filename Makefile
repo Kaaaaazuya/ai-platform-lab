@@ -4,7 +4,7 @@ CHAT_MODEL ?= qwen2.5:7b
 EMBED_MODEL ?= bge-m3
 TF_DIR := terraform/envs/local
 
-.PHONY: help env models up down logs emulator-wait tf-init tf-apply tf-destroy docs ingest api web test docs-serve
+.PHONY: help env models up down logs emulator-wait tf-init tf-apply tf-destroy docs ingest api web test guard-check guard-check-api docs-serve
 
 help: ## ターゲット一覧
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-14s %s\n", $$1, $$2}'
@@ -59,6 +59,12 @@ api: ## アプリAPIを起動（:8787）
 
 web: ## チャット画面を起動（:5173）
 	cd app/web && npm run dev
+
+guard-check: ## ガードレールのケース（eval/guard-cases.jsonl）を判定
+	cd app/api && npm run guard:check
+
+guard-check-api: ## 同じケースをアプリAPIに流してトレースを作る
+	cd app/api && npm run guard:check -- --api http://127.0.0.1:8787/chat
 
 test: ## 型チェックとテスト
 	npm run typecheck && npm test

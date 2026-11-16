@@ -5,13 +5,14 @@
 - デザインドックとADR: https://kaaaaazuya.github.io/ai-platform-lab/
 - セットアップ手順: [docs/setup.md](docs/setup.md)
 
-## 構成（MVP: M1＋M2）
+## 構成（M1〜M3）
 
 | 役割 | 使うもの |
 | --- | --- |
 | AWS（DynamoDB・S3・Lambda） | AWS Emulator（Docker、`127.0.0.1:9297`） |
 | AIゲートウェイ | Envoy AI Gateway（現 Agent Router）の `aigw run` |
 | LLM | Ollama（ホスト）: `qwen2.5:7b` / 埋め込み `bge-m3` |
+| ガードレール | Presidio＋日本向けルール（`app/api/src/guard.ts`） |
 | ベクトルストア | pgvector |
 | 観測 | OTel Collector → Grafana（otel-lgtm）と Langfuse |
 | IaC | Terraform（エミュレーターと実AWSで同じコード） |

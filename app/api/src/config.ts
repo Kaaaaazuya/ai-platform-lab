@@ -17,6 +17,14 @@ export const config = {
   conversationsTable: env("CONVERSATIONS_TABLE", "ai-platform-lab-conversations"),
   historyTurns: Number(env("HISTORY_TURNS", "6")),
 
+  // ガードレール（ADR-005）。PRESIDIO_URL を空にすると独自ルールだけで動く
+  presidioUrl: env("PRESIDIO_URL", "http://127.0.0.1:5002"),
+  presidioEntities: env("PRESIDIO_ENTITIES", "EMAIL_ADDRESS,CREDIT_CARD,IP_ADDRESS,IBAN_CODE")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
+  guardTimeoutMs: Number(env("GUARD_TIMEOUT_MS", "2000")),
+
   port: Number(env("PORT", "8787")),
   corsOrigin: env("CORS_ORIGIN", "http://localhost:5173"),
 };
