@@ -65,3 +65,27 @@ M3までは型チェックとテスト、`terraform fmt` しかなく、リン�
     - aigw `v1.2.1`、otel-collector `0.165.0`、otel-lgtm `0.41.0`、presidio `2.2.366`
 - [ ] Dependabot が compose.yaml の `${VAR:-tag}` 形式を更新対象として認識するか
 - [ ] trivy（イメージ・Terraform・Dockerfile）を入れるか
+
+## CIの実行の絞り込み（2026-11-17 追加）
+
+ドキュメントだけのPRでも、TerraformやNode.jsのジョブがすべて動いていた。`npm ci` も3つのジョブで別々に実行していた。そこで次のように変えた。
+
+- 最初の `changes` ジョブで変更されたファイルを調べ（`scripts/ci-changes.sh`）、関係するジョブだけを動かす。外部のActionは使わず、`git diff` で判定する
+- CIの設定（`ci.yml` と `ci-changes.sh`）が変わったときと、比べる元のコミットがないときは、すべてのジョブを動かす
+- 移動したファイルは元と先の両方の名前で判定する。日本語のファイル名もそのまま判定する
+- シークレットの検出は軽いので、毎回すべての履歴を見る
+- Node.jsの検査（サプライチェーン、Biome、型チェック、テスト、ビルド、評価の差分、textlint）を1つのジョブにまとめ、`npm ci` を1回にした
+- ドキュメントサイトのビルド（`mkdocs build --strict`）を、マージの前にPRで確かめるようにした
+- 同じPRへ続けてプッシュしたら、前の実行を取り消す。mainへのプッシュは実行ごとに別グループとし、待っている実行を後の実行で置き換えない
+- 各ジョブに `timeout-minutes` を付け、止まったジョブが長く残らないようにした
+- AWS Emulatorのジョブは、配布元のURL（リポジトリ変数）がなければジョブごと動かさない
+
+| 変更したファイル | 動くジョブ |
+| --- | --- |
+| `app/`、`eval/`、`package*.json`、`biome.json`、`.npmrc` | node（サプライチェーンとコードの検査） |
+| `docs/`、`README.md`、`mkdocs.yml`、textlintの設定 | node（textlint）、docs |
+| `terraform/`、`.tflint.hcl`、エミュレーター接続のスクリプト | terraform-static、terraform-emulator |
+| シェル、ワークフロー、Dockerfile | static（shellcheck、actionlint、hadolint） |
+| どれでも | changes、secrets |
+
+ブランチ保護で必須のチェックを決めるときは、飛ばされたジョブの結果が「skipped」として扱われる点を考える。必須にするなら、常に動く `changes` と `secrets` か、全ジョブの結果をまとめるジョブを用意する。
