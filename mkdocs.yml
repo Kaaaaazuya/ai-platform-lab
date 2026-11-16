@@ -49,6 +49,8 @@ plugins:
 nav:
   - デザインドック: index.md
   - セットアップ: setup.md
+  - 文章ガイド: writing-guide.md
+  - 用語集: glossary.md
   - ADR:
       - adr/index.md
       - "001 LLM推論のローカル再現": adr/0001-local-llm.md

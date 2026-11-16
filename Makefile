@@ -69,8 +69,9 @@ guard-check-api: ## 同じケースをアプリAPIに流してトレースを作
 hooks: ## コミット前・プッシュ前のフックを有効にする（lefthook）
 	lefthook install
 
-lint: ## リンター一式（Biome・shellcheck・actionlint・hadolint・tflint・gitleaks）
+lint: ## リンター一式（Biome・textlint・shellcheck・actionlint・hadolint・tflint・gitleaks）
 	npx biome check .
+	npm run -s lint:text
 	shellcheck scripts/*.sh
 	actionlint
 	hadolint infra/aws-emulator/Dockerfile

@@ -47,6 +47,8 @@ jobs:
       - run: npm ci
       - name: Biome
         run: npx biome ci .
+      - name: textlint（docs/writing-guide.md）
+        run: npm run lint:text
       - name: shellcheck
         run: shellcheck scripts/*.sh
       - name: actionlint

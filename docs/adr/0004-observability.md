@@ -25,7 +25,7 @@ OpenTelemetryを共通の土台にして、トレースIDとメトリクスを�
 
 **構成**
 
-- 画面 → API Gateway → Lambda → Envoy AI Gateway → Ollama / Bedrockまで、W3C Trace Context（traceparent）を引き継ぐ
+- W3C Trace Context（traceparent）を引き継ぐ。範囲は画面 → API Gateway → Lambda → Envoy AI Gateway → Ollama / Bedrock
 - 各コンポーネントはOTLPでOTel Collectorに送る。Collectorが振り分ける：全トレース・メトリクス・ログ → Grafana系（Tempo、Prometheus、Loki）、LLM関連のspan → Langfuse
 - LangfuseはOTelのトレースIDをそのまま使うので、同じIDでGrafanaとLangfuseの両方を引ける。Grafanaのトレース画面からLangfuseのトレースへリンクを張る
 - Envoy AI GatewayのGenAIメトリクス（トークン数、レイテンシなど）もGrafanaで見る

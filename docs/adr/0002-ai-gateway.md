@@ -24,7 +24,7 @@
 !!! note "名称変更"
     Envoy AI Gatewayは2026年にAgent Router（theagentrouter/agent-router）へ改名された。CLI（`aigw`）とコンテナイメージ（`envoyproxy/ai-gateway-cli`）は同じ名前のまま。
 
-案B（Envoy AI Gateway）を採用する。ローカルでは`aigw run`のスタンドアロンモード（KubernetesもDockerも不要）で動かし、ADR-010でKubernetesを用意したら、同じ設定をクラスターに載せる。
+案B（Envoy AI Gateway）を採用する。ローカルでは`aigw run`のスタンドアロンモードで動かす（KubernetesとDockerは不要）。ADR-010でKubernetesを用意したら、同じ設定をクラスターに載せる。
 
 **理由**
 
@@ -44,7 +44,7 @@
 
 - [ ] `aigw run`でOllamaにつながり、ストリーミング応答が中継されるか（ADR-011）
 - [ ] アプリの認証（APIキーかJWT）の設定方法
-- [ ] トレースの形式（OpenInferenceかGenAI規約か）と、Langfuseでの表示（ADR-004）
+- [ ] トレースの形式（OpenInference、またはGenAI規約）と、Langfuseでの表示（ADR-004）
 
 **参考資料**
 

@@ -49,11 +49,11 @@ make guard-check
 make guard-check-api
 ```
 
-Langfuseで表示されたトレースを開き、`rag.guard.input` / `rag.guard.output` のspanで `guard.blocked`・`guard.pii.entities` を確認する。検出があったspanはレベルが WARNING になる。
+表示されたトレースをLangfuseで開く。`rag.guard.input` と `rag.guard.output` のspanで、`guard.blocked` と `guard.pii.entities` を確認する。検出があったspanはレベルが WARNING になる。
 
 ## 依存パッケージを足すとき
 
-`.npmrc` で install スクリプトを止めている。`npm install` 後にCIの `check-install-scripts` が失敗したら、そのパッケージのスクリプトの中身を確かめてから `scripts/check-install-scripts.mjs` の許可リストに足す。
+`.npmrc` で install スクリプトを止めている。`npm install` の後でCIの `check-install-scripts` が失敗したら、そのパッケージのスクリプトの中身を確かめる。問題がなければ `scripts/check-install-scripts.mjs` の許可リストに足す。
 
 ## ポート
 
@@ -70,7 +70,7 @@ Langfuseで表示されたトレースを開き、`rag.guard.input` / `rag.guard
 
 ## まだ確かめていないこと
 
-- Terraform の AWS provider が `AWS_ENDPOINT_URL` と `AWS_CA_BUNDLE` だけでエミュレーターにつながるか（つながらなければ provider の `endpoints` で上書きする）
+- Terraform の AWS provider が `AWS_ENDPOINT_URL` と `AWS_CA_BUNDLE` だけでエミュレーターにつながるか。つながらなければ provider の `endpoints` で上書きする
 - aigw が `traceparent` を引き継ぎ、アプリAPIのspanとLLM spanが1本のトレースになるか
 - Langfuse で OpenInference 形式のspanが generation として表示されるか
 - compose.yaml で固定したイメージのタグがレジストリにあるか（ADR-013）

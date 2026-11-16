@@ -4,6 +4,7 @@
 
 - デザインドックとADR: https://kaaaaazuya.github.io/ai-platform-lab/
 - セットアップ手順: [docs/setup.md](docs/setup.md)
+- 文章を書くとき: [docs/writing-guide.md](docs/writing-guide.md)
 
 ## 構成（M1〜M3）
 

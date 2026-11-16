@@ -14,7 +14,7 @@ PIIマスクとプロンプトインジェクション検知をどこで強制�
 | B | LLM Guardなどを別コンテナ（サイドカー）として置く | 差し替えやすい | 通信が1ホップ増える |
 | C | 実AWSではBedrock Guardrailsを使う | マネージド | ローカルで再現できない |
 
-**ログ方針の候補**：本文を記録する / マスク後のみ記録する / メタデータのみ記録する
+**ログ方針の候補**：本文を記録する / マスク後の本文を記録する / メタデータだけを記録する。
 
 ## 判断材料・確認すること
 
@@ -28,12 +28,14 @@ PIIマスクとプロンプトインジェクション検知をどこで強制�
 
 **構成**
 
-- PII検出は2段：Presidio（`presidio-analyzer`コンテナ）でメール・カード番号・IPアドレスなどの汎用ルール、アプリ側（`app/api/src/guard.ts`）で日本向けのルール（電話番号、口座番号、マイナンバー、郵便番号、ラベル付きの氏名）
+- PII検出は2段にする
+    - Presidio（`presidio-analyzer`コンテナ）：メール・カード番号・IPアドレスなどの汎用ルール
+    - アプリ側（`app/api/src/guard.ts`）：日本向けのルール（電話番号、口座番号、マイナンバー、郵便番号、ラベル付きの氏名）
 - プロンプトインジェクションはルールベース（日本語・英語の典型パターン）で検知し、該当したら**LLMを呼ばずに**ブロックする
 - 入力は検査後にマスクし、以降の埋め込み・生成・トレース・会話履歴にはマスク後の文字列だけを渡す
 - 出力は生成の完了後に全文を検査する。PIIがあれば `guard`（`redact`）イベントでマスク後の全文を送り、画面の回答を差し替える。履歴とトレースにはマスク後の回答だけを残す
 - ゲートウェイ（aigw）は `OPENINFERENCE_HIDE_OUTPUTS=true` にして、生の生成結果をspanに残さない
-- 判定結果はspan属性（`guard.blocked`、`guard.pii.entities`、`guard.injection.rules`）に載せ、検出があれば `langfuse.observation.level=WARNING` にする。改善ループではこれでLangfuseから抽出する
+- 判定結果はspan属性（`guard.blocked`、`guard.pii.entities`、`guard.injection.rules`）に載せる。検出があれば `langfuse.observation.level=WARNING` にし、改善ループではこれを手がかりにLangfuseから抽出する
 - Presidioに届かないときは独自ルールだけで続ける（fail-open）。理由は `guard.presidio_error` に残す
 - 攻撃・PIIのケースは `eval/guard-cases.jsonl` に置き、CIのテストで毎回判定する
 
