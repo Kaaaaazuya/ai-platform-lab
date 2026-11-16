@@ -23,4 +23,4 @@ IAM、Bedrockの推論、Bedrock Guardrails、スロットリングはローカ�
 
 ## 決定
 
-未定
+未定。

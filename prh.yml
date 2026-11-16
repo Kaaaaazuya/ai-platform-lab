@@ -1,0 +1,48 @@
+# 表記の統一（docs/writing-guide.md「用語を統一する」）。expected が正しい表記
+version: 1
+rules:
+  # 一般的な言葉
+  - expected: ドキュメント
+    pattern: 文書
+  - expected: IPアドレス
+    pattern: /IP(?!アドレス)/
+  - expected: サーバー
+    pattern: /サーバ(?!ー)/
+  - expected: ユーザー
+    pattern: /ユーザ(?!ー)/
+  - expected: エミュレーター
+    pattern: /エミュレータ(?!ー)/
+  - expected: ゲートウェイ
+    pattern: ゲートウエイ
+  - expected: メモリ
+    pattern: メモリー
+  - expected: レイテンシ
+    pattern: レイテンシー
+  - expected: できる
+    pattern: 出来る
+  - expected: ください
+    pattern: 下さい
+
+  # 製品名・技術名
+  - expected: GitHub
+    pattern: /\b(?:Github|github)\b(?![.\/-])/
+  - expected: GitHub Actions
+    pattern: /GitHub actions|Github Actions/
+  - expected: TypeScript
+    pattern: /\b(?:Typescript|typescript)\b/
+  - expected: JavaScript
+    pattern: /\b(?:Javascript|javascript)\b/
+  - expected: Node.js
+    pattern: /\b(?:NodeJS|nodejs|Nodejs|node\.js)\b/
+  - expected: OpenTelemetry
+    pattern: /\b(?:Opentelemetry|OpenTelemetory)\b/
+  - expected: Kubernetes
+    pattern: /\b(?:kubernetes|Kubenetes)\b(?!-)/
+  - expected: Langfuse
+    pattern: /\b(?:LangFuse|langFuse)\b/
+  - expected: pgvector
+    pattern: /\b(?:PGVector|PgVector|pgVector)\b/
+  - expected: AWS Emulator
+    pattern: /AWS emulator|AWSエミュレーター/
+  - expected: Docker Compose
+    pattern: /Docker compose|docker-compose(?!\.)/

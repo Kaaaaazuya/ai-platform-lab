@@ -9,6 +9,9 @@ pre-commit:
       glob: "*.{ts,tsx,js,json,css}"
       run: npx biome check --write --no-errors-on-unmatched {staged_files}
       stage_fixed: true
+    - name: textlint
+      glob: "{README.md,docs/**/*.md}"
+      run: npx textlint {staged_files}
     - name: terraform-fmt
       glob: "*.tf"
       run: terraform fmt {staged_files}

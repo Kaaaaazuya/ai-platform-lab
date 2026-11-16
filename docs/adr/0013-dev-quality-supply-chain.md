@@ -7,8 +7,8 @@
 M3までは型チェックとテスト、`terraform fmt` しかなく、リンター、シークレットの検出、依存パッケージの対策がなかった。洗い出した結果は次のとおり。
 
 - TypeScript（api・web）にリンター・フォーマッターがない。シェル、GitHub Actions、Dockerfile、Terraform（tflint）も検査していない
-- シークレットのスキャンがコミット前にもCIにもない
-- 依存パッケージ448個のうち3個が install スクリプトを持つ。CIが `npm ci || npm install` で、lockfile と食い違うと黙って再解決する。`npm audit` で38件（critical 2、high 4）
+- シークレットのスキャンがない（コミット前とCIの両方）
+- 依存パッケージ448個のうち3個が install スクリプトを持つ。CIの `npm ci || npm install` は、lockfile がずれていると黙って再解決する。`npm audit` で38件（critical 2、high 4）
 - GitHub Actions をタグで指定している。`latest` タグのイメージが4つある
 
 ## 選択肢
@@ -25,7 +25,12 @@ M3までは型チェックとテスト、`terraform fmt` しかなく、リン�
 **リンター・フォーマッター**
 
 - Biome（`biome.json`）。推奨ルールに加え、React のルールと non-null assertion の禁止を有効にする。整形は幅120・ダブルクォート
-- shellcheck（`scripts/*.sh`）、actionlint（ワークフロー）、hadolint（Dockerfile）、tflint（terraform と AWS のルールセット、`.tflint.hcl`）
+- シェルは shellcheck、ワークフローは actionlint、Dockerfile は hadolint で検査する
+- Terraform は tflint で検査する。terraform と AWS のルールセットを使う（`.tflint.hcl`）
+
+**人が読む文章**
+
+- [文章ガイド](../writing-guide.md)を決め、textlint（ja-technical-writing のプリセットと表記辞書 `prh.yml`）で `README.md` と `docs/` を検査する（2026-11-16 追加）
 
 **シークレット**
 
@@ -48,13 +53,15 @@ M3までは型チェックとテスト、`terraform fmt` しかなく、リン�
 
 **受け入れること**
 
-- フックを有効にするには、各自で `brew install lefthook gitleaks shellcheck actionlint hadolint tflint` と `make hooks` が必要
+- フックを有効にするには、各自でツールを入れて `make hooks` を実行する
+    - `brew install lefthook gitleaks shellcheck actionlint hadolint tflint`
 - `ignore-scripts=true` のため、ネイティブビルドが必要なパッケージを入れるときは `npm rebuild <pkg>` を明示的に実行する
 - MinIO（`cgr.dev/chainguard/minio`）は無料版が `latest` しか配布していないので固定していない
 - イメージやTerraformの脆弱性スキャン（trivy など）はまだ入れていない
 
 ## 確認すること
 
-- [ ] compose.yaml で固定したタグ（aigw `v1.2.1`、otel-collector `0.165.0`、otel-lgtm `0.41.0`、presidio `2.2.366`）がレジストリにあるか。タグの一覧はこの環境から確認できていない
+- [ ] compose.yaml で固定したタグがレジストリにあるか。タグの一覧はまだ確認できていない
+    - aigw `v1.2.1`、otel-collector `0.165.0`、otel-lgtm `0.41.0`、presidio `2.2.366`
 - [ ] Dependabot が compose.yaml の `${VAR:-tag}` 形式を更新対象として認識するか
 - [ ] trivy（イメージ・Terraform・Dockerfile）を入れるか

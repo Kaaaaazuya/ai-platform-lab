@@ -26,7 +26,7 @@ AWS EmulatorはCloudFormation、Terraform、CDKへの対応がサービスごと
 
 Terraformを採用し、CI/CDの中でAWS Emulatorと実AWSの2段で検証する。パイプラインの図はデザインドックの「検証戦略」にある。
 
-1. **PRごと（AWS Emulator・無料）**：静的チェック（fmt、validate、tflint、trivy）→ エミュレーター起動 → terraform apply → 統合テストと評価ランナー → エミュレーター停止
+1. **PRごと（AWS Emulator・無料）**：静的チェック → エミュレーター起動 → terraform apply → 統合テストと評価ランナー → エミュレーター停止。静的チェックは fmt、validate、tflint、trivy
 2. **mainマージ後（実AWS・従量課金）**：terraform plan → 手動承認 → apply → スモークテスト → destroy
 
 ### 構成の決めごと
