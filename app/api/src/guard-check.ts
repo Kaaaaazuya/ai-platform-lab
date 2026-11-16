@@ -24,19 +24,23 @@ export async function judge(
   return { ok: actual === c.expect && entitiesOk, actual, entities, masked: g.masked };
 }
 
-async function viaApi(url: string, c: GuardCase): Promise<string> {
+// APIに送り、トレースIDとガードのイベントを返す。HTTPエラーや error イベントは失敗にする
+export async function viaApi(url: string, c: GuardCase): Promise<{ ok: boolean; summary: string }> {
   const res = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ sessionId: `guard-check-${Date.now()}`, message: c.input }),
   });
+  if (!res.ok) return { ok: false, summary: `HTTP ${res.status}` };
   const lines = (await res.text())
     .split("\n")
     .filter(Boolean)
     .map((l) => JSON.parse(l));
   const traceId = lines.find((e) => e.type === "meta")?.traceId ?? "-";
   const guard = lines.filter((e) => e.type === "guard").map((e) => `${e.stage}:${e.action}`);
-  return `${traceId} ${guard.join(" ") || "(no guard event)"}`;
+  const error = lines.find((e) => e.type === "error");
+  if (error) return { ok: false, summary: `${traceId} error: ${error.message}` };
+  return { ok: true, summary: `${traceId} ${guard.join(" ") || "(no guard event)"}` };
 }
 
 async function main() {
@@ -44,10 +48,16 @@ async function main() {
   let failed = 0;
   for (const c of loadCases()) {
     const r = await judge(c);
-    if (!r.ok) failed++;
-    const extra = api ? await viaApi(api, c) : r.masked;
+    let ok = r.ok;
+    let extra = r.masked;
+    if (api) {
+      const a = await viaApi(api, c);
+      ok &&= a.ok;
+      extra = a.summary;
+    }
+    if (!ok) failed++;
     console.log(
-      `${r.ok ? "OK  " : "FAIL"} ${c.id.padEnd(20)} expect=${c.expect} actual=${r.actual} [${r.entities.join(",")}] ${extra}`,
+      `${ok ? "OK  " : "FAIL"} ${c.id.padEnd(20)} expect=${c.expect} actual=${r.actual} [${r.entities.join(",")}] ${extra}`,
     );
   }
   console.log(failed === 0 ? "all passed" : `${failed} failed`);
