@@ -1,6 +1,6 @@
 # 文章ガイド
 
-このリポジトリで人が読む文章（デザインドック、ADR、セットアップ手順、README、PRの説明）を書くときの決まり。弁護士ドットコム Creators' Blog の記事「[人間に向けて文書を書こう](https://creators.bengo4.com/entry/2026/08/19/080000)」を下敷きにしている。
+このリポジトリで人が読む文章（デザインドック、ADR、セットアップ手順、README、PRの説明）を書くときの決まり。
 
 ## 前提
 
@@ -70,5 +70,4 @@ AIに文章を書かせるときは、次を指示に含める。
 
 ## 参考
 
-- [人間に向けて文書を書こう（弁護士ドットコム Creators' Blog）](https://creators.bengo4.com/entry/2026/08/19/080000)
 - [textlint-rule-preset-ja-technical-writing](https://github.com/textlint-ja/textlint-rule-preset-ja-technical-writing)
