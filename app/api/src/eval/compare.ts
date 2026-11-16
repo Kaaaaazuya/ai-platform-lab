@@ -2,7 +2,7 @@
 // 悪化した指標があれば終了コード1。GitHub Actions では結果をジョブのサマリーに書く。
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { compare, type Report } from "./metrics.js";
+import { compare, coverageProblem, type Report } from "./metrics.js";
 
 const ROOT = resolve(import.meta.dirname, "../../../..");
 const basePath = resolve(ROOT, process.argv[2] ?? "eval/baseline.json");
@@ -21,6 +21,11 @@ if (!existsSync(basePath) || !existsSync(curPath)) {
 
 const base = JSON.parse(readFileSync(basePath, "utf8")) as Report;
 const cur = JSON.parse(readFileSync(curPath, "utf8")) as Report;
+const problem = coverageProblem(base, cur);
+if (problem) {
+  write(`## RAGの評価\n\n${problem}`);
+  process.exit(1);
+}
 const { regressions, markdown } = compare(base.summary, cur.summary);
 
 write(

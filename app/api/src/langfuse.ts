@@ -4,7 +4,18 @@ import { config } from "./config.js";
 
 const enabled = () => Boolean(config.langfusePublicKey && config.langfuseSecretKey);
 
+const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
+
+/** 鍵を平文で送らないよう、http はループバックだけに限る */
+export function assertSafeHost(host: string): void {
+  const url = new URL(host);
+  if (url.protocol === "https:") return;
+  if (url.protocol === "http:" && LOOPBACK.has(url.hostname)) return;
+  throw new Error(`LANGFUSE_HOST は https か、ループバックの http にしてください: ${url.origin}`);
+}
+
 async function call(path: string, body: unknown): Promise<void> {
+  assertSafeHost(config.langfuseHost);
   const auth = Buffer.from(`${config.langfusePublicKey}:${config.langfuseSecretKey}`).toString("base64");
   const res = await fetch(`${config.langfuseHost}/api/public/${path}`, {
     method: "POST",

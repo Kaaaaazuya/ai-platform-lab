@@ -64,7 +64,7 @@ make eval-compare
 make eval-baseline
 ```
 
-結果は `eval/reports/latest.json` に書かれる。`.env` に Langfuse の鍵があれば、スコアがトレースに付き、データセット `rag-eval` の実験として残る。プロンプトなどを変えたPRでは、`make eval` の結果もコミットする。CIがベースラインとの差分をジョブのサマリーに出す。
+結果は `eval/reports/latest.json` に書かれる。`.env` に Langfuse の鍵があれば、スコアがトレースに付き、データセット `rag-eval` の実験として残る。プロンプトなどを変えたPRでは、`make eval` の結果もコミットする。`--limit` で一部だけ流した結果は、ベースラインと比べられない（比較は失敗する）。CIがベースラインとの差分をジョブのサマリーに出す。
 
 ## 依存パッケージを足すとき
 

@@ -9,6 +9,7 @@ import { type ChatEvent, runChat } from "../chat.js";
 import { config } from "../config.js";
 import { langfuseEnabled, linkRunItem, postScores, upsertDataset } from "../langfuse.js";
 import type { Retrieved } from "../prompt.js";
+import { shutdownTelemetry } from "../telemetry.js";
 import { closeDb } from "../vector.js";
 import { judge } from "./judge.js";
 import {
@@ -118,7 +119,10 @@ async function main() {
 }
 
 void main().then(
-  () => setTimeout(() => process.exit(0), 2000), // OTel のエクスポートを待ってから終わる
+  async () => {
+    await shutdownTelemetry(); // 送信待ちのspanを送り切ってから終わる
+    process.exit(0);
+  },
   (e) => {
     console.error(e);
     process.exit(1);

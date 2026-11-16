@@ -4,12 +4,14 @@ import { buildJudgeMessages, parseJudgement } from "../src/eval/judge.js";
 import {
   type CaseResult,
   compare,
+  coverageProblem,
   hasCitation,
   loadRagCases,
   median,
   retrievalHit,
   summarize,
 } from "../src/eval/metrics.js";
+import { assertSafeHost } from "../src/langfuse.js";
 
 const result = (over: Partial<CaseResult> = {}): CaseResult => ({
   id: "x",
@@ -97,5 +99,44 @@ describe("eval/rag-cases.jsonl", () => {
     expect(cases.length).toBeGreaterThanOrEqual(10);
     expect(new Set(cases.map((c) => c.id)).size).toBe(cases.length);
     for (const c of cases) for (const s of c.sources) expect(s).toMatch(/^opentelemetry\/.+\.md$/);
+  });
+});
+
+describe("coverageProblem", () => {
+  const report = (ids: string[]) => ({
+    createdAt: "",
+    chatModel: "m",
+    judgeModel: "m",
+    summary: summarize([]),
+    results: ids.map((id) => result({ id })),
+  });
+
+  it("同じケースなら問題なし", () => {
+    expect(coverageProblem(report(["a", "b"]), report(["b", "a"]))).toBeNull();
+  });
+
+  it("--limit で一部だけ流したレポートは比べない", () => {
+    expect(coverageProblem(report(["a", "b", "c"]), report(["a"]))).toContain("今回にないケース：b、c");
+  });
+
+  it("重複したケースは比べない", () => {
+    expect(coverageProblem(report(["a", "b"]), report(["a", "a"]))).toContain("重複");
+  });
+});
+
+describe("assertSafeHost", () => {
+  it("https とループバックの http は通す", () => {
+    for (const h of [
+      "https://cloud.langfuse.com",
+      "http://127.0.0.1:3000",
+      "http://localhost:3000",
+      "http://[::1]:3000",
+    ]) {
+      expect(() => assertSafeHost(h)).not.toThrow();
+    }
+  });
+
+  it("リモートの http は止める", () => {
+    expect(() => assertSafeHost("http://langfuse.example.com")).toThrow();
   });
 });
