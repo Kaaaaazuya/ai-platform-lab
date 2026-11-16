@@ -119,7 +119,7 @@ M3までは型チェックとテスト、`terraform fmt` しかなく、リン�
 
 - ライブラリ1つごとにPRが出ていた。Actions だけで4件あり、PRごとに CI と CodeRabbit が動く。CodeRabbit は1時間に10回までなので、まとめて来ると枠が足りなくなる
 - compose.yaml で `${AIGW_IMAGE_TAG:-v1.2.1}` のように変数で書いたタグを、Dependabot は読めない。そのため主役の Agent Router、Presidio、OTel Collector、Grafana、Langfuse の更新は届かない。届いていたのは、Langfuse が中で使う ClickHouse と Redis の更新だけだった
-- ClickHouse と Redis の版は、Langfuse の対応に合わせて決める。最新に上げると、Langfuse が動かなくなる恐れがある
+- ClickHouse と Redis の版は、Langfuse の対応に合わせて決める。最新に上げると、Langfuse の起動に失敗する恐れがある
 - ドキュメントのビルドに使う `docs/requirements.txt`（MkDocs など）は、更新の対象に入っていなかった
 
 ### 決めたこと
