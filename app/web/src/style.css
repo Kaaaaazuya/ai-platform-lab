@@ -95,3 +95,12 @@ button:disabled {
   opacity: 0.5;
   cursor: default;
 }
+
+.guard {
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-left: 3px solid #d97706;
+  background: #fef3c7;
+  color: #78350f;
+  font-size: 0.85rem;
+}

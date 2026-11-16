@@ -35,6 +35,18 @@ make web
 
 http://localhost:5173 を開いて質問する。回答の下の「トレース」リンクで、そのリクエストのLangfuseトレースが開く。
 
+## ガードレールの確認（M3）
+
+```bash
+# ガードの判定だけを確かめる（Presidioが起動していれば併用）
+make guard-check
+
+# アプリAPI経由で流し、トレースIDを表示する
+make guard-check-api
+```
+
+Langfuseで表示されたトレースを開き、`rag.guard.input` / `rag.guard.output` のspanで `guard.blocked`・`guard.pii.entities` を確認する。検出があったspanはレベルが WARNING になる。
+
 ## ポート
 
 | サービス | URL |
@@ -45,6 +57,7 @@ http://localhost:5173 を開いて質問する。回答の下の「トレース�
 | AWS Emulator | https://127.0.0.1:9297 |
 | Langfuse | http://localhost:3000 |
 | Grafana | http://localhost:3001 |
+| Presidio（PII検出） | http://localhost:5002 |
 | Postgres（pgvector） | localhost:5433 |
 
 ## まだ確かめていないこと
@@ -52,4 +65,5 @@ http://localhost:5173 を開いて質問する。回答の下の「トレース�
 - Terraform の AWS provider が `AWS_ENDPOINT_URL` と `AWS_CA_BUNDLE` だけでエミュレーターにつながるか（つながらなければ provider の `endpoints` で上書きする）
 - aigw が `traceparent` を引き継ぎ、アプリAPIのspanとLLM spanが1本のトレースになるか
 - Langfuse で OpenInference 形式のspanが generation として表示されるか
+- Presidioのイメージが arm64（Apple Silicon）で動くか（動かなければ `platform: linux/amd64` を付ける）
 - AWS Emulator で API Gateway のストリーミング応答が再現されるか（MVPはローカルの `server.ts` で同じ処理を動かしている）

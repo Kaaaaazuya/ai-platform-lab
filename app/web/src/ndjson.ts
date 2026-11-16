@@ -3,6 +3,9 @@ export type ChatEvent =
   | { type: "meta"; traceId: string }
   | { type: "token"; text: string }
   | { type: "sources"; sources: { n: number; source: string; heading: string; score: number }[] }
+  | { type: "guard"; stage: "input"; action: "block"; reason: string }
+  | { type: "guard"; stage: "input"; action: "mask"; entities: string[] }
+  | { type: "guard"; stage: "output"; action: "redact"; text: string; entities: string[] }
   | { type: "error"; message: string }
   | { type: "done" };
 

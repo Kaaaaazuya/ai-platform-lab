@@ -89,6 +89,9 @@ services:
       # trace に載せるリクエストヘッダー（会話IDを Langfuse の session として使う）
       OTEL_AIGW_REQUEST_HEADER_ATTRIBUTES: x-session-id:session.id
       OPENINFERENCE_HIDE_EMBEDDINGS_VECTORS: "true"
+      # ADR-005「マスク後のみ記録」: 入力はアプリでマスク済み。生の生成結果はゲートウェイの
+      # spanに残さず、出力ガードでマスクした回答をアプリの rag.chat span に記録する
+      OPENINFERENCE_HIDE_OUTPUTS: "true"
     extra_hosts:
       - host.docker.internal:host-gateway
     ports:
@@ -96,6 +99,20 @@ services:
       - 127.0.0.1:1064:1064 # admin: /metrics /health
     depends_on:
       - otel-collector
+
+  # ---------- Guardrail (ADR-005) ----------
+  # 汎用PII（メール・カード番号など）。日本向けのルールは app/api/src/guard.ts
+  presidio-analyzer:
+    image: mcr.microsoft.com/presidio-analyzer:${PRESIDIO_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:5002:3000
+    mem_limit: 2g
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request;urllib.request.urlopen('http://localhost:3000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
 
   # ---------- Postgres (pgvector) : RAG と Langfuse で共用 ----------
   postgres:

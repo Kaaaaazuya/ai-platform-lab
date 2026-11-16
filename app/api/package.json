@@ -6,6 +6,7 @@
     "dev": "tsx watch --import ./src/telemetry.ts src/server.ts",
     "start": "tsx --import ./src/telemetry.ts src/server.ts",
     "ingest": "tsx --import ./src/telemetry.ts src/ingest.ts",
+    "guard:check": "tsx src/guard-check.ts",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
