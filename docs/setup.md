@@ -55,6 +55,10 @@ make guard-check-api
 
 `.npmrc` で install スクリプトを止めている。`npm install` の後でCIの `check-install-scripts` が失敗したら、そのパッケージのスクリプトの中身を確かめる。問題がなければ `scripts/check-install-scripts.mjs` の許可リストに足す。
 
+## 依存パッケージを足すとき
+
+`.npmrc` で install スクリプトを止めている。`npm install` 後にCIの `check-install-scripts` が失敗したら、そのパッケージのスクリプトの中身を確かめてから `scripts/check-install-scripts.mjs` の許可リストに足す。
+
 ## ポート
 
 | サービス | URL |
