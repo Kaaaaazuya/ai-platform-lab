@@ -16,7 +16,7 @@
 | Terraform | tflint | CI |
 | 秘密情報 | gitleaks | コミット前（staged の差分）、CI（全履歴） |
 | npm の依存 | `npm ci`、`npm audit`、`npm audit signatures`、install スクリプトの許可リスト | CI |
-| 依存の更新 | Dependabot（cooldown 7日、種類ごとにまとめる） | 月1回（セキュリティ修正はすぐ） |
+| 依存の更新 | Dependabot（cooldown 7日、種類ごとにまとめる） | 月1回（セキュリティ修正はすぐ。SHAで固定した Actions は月1回の更新だけ） |
 
 関連ADR：[ADR-013](../adr/0013-dev-quality-supply-chain.md)、文章の決まりは[文章ガイド](../writing-guide.md)
 
