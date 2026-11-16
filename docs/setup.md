@@ -9,10 +9,14 @@ Mac（Apple Silicon）で、ローカル基盤とRAGチャットを動かす手�
 - [Ollama](https://ollama.com/)（ホストで動かす）
 - Terraform 1.9 以上
 - AWS Emulator の rpm（`infra/aws-emulator/` に置く。後述）
+- 開発用ツール：`brew install lefthook gitleaks shellcheck actionlint hadolint tflint`
 
 ## 手順
 
 ```bash
+# 0. コミット前・プッシュ前のフックを有効にする（ADR-013）
+make hooks
+
 # 1. 秘密情報を生成（.env はコミットしない）
 make env
 
@@ -47,6 +51,10 @@ make guard-check-api
 
 Langfuseで表示されたトレースを開き、`rag.guard.input` / `rag.guard.output` のspanで `guard.blocked`・`guard.pii.entities` を確認する。検出があったspanはレベルが WARNING になる。
 
+## 依存パッケージを足すとき
+
+`.npmrc` で install スクリプトを止めている。`npm install` 後にCIの `check-install-scripts` が失敗したら、そのパッケージのスクリプトの中身を確かめてから `scripts/check-install-scripts.mjs` の許可リストに足す。
+
 ## ポート
 
 | サービス | URL |
@@ -65,5 +73,6 @@ Langfuseで表示されたトレースを開き、`rag.guard.input` / `rag.guard
 - Terraform の AWS provider が `AWS_ENDPOINT_URL` と `AWS_CA_BUNDLE` だけでエミュレーターにつながるか（つながらなければ provider の `endpoints` で上書きする）
 - aigw が `traceparent` を引き継ぎ、アプリAPIのspanとLLM spanが1本のトレースになるか
 - Langfuse で OpenInference 形式のspanが generation として表示されるか
+- compose.yaml で固定したイメージのタグがレジストリにあるか（ADR-013）
 - Presidioのイメージが arm64（Apple Silicon）で動くか（動かなければ `platform: linux/amd64` を付ける）
 - AWS Emulator で API Gateway のストリーミング応答が再現されるか（MVPはローカルの `server.ts` で同じ処理を動かしている）

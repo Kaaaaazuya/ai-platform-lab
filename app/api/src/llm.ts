@@ -1,7 +1,7 @@
 // AIゲートウェイ（OpenAI 互換 API）の呼び出し。モデルの切り替えはゲートウェイ側の設定で行い、
 // アプリは Ollama か Bedrock かを意識しない（ADR-001 / ADR-002）。
 import { config } from "./config.js";
-import { SseParser, deltaFromChunk } from "./sse.js";
+import { deltaFromChunk, SseParser } from "./sse.js";
 
 export type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 

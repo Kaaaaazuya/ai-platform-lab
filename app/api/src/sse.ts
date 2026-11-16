@@ -8,9 +8,8 @@ export class SseParser {
   push(chunk: string): string[] {
     this.buffer += chunk;
     const events: string[] = [];
-    let sep: number;
     // イベントは空行（\n\n）で区切られる
-    while ((sep = this.buffer.search(/\r?\n\r?\n/)) !== -1) {
+    for (let sep = this.buffer.search(/\r?\n\r?\n/); sep !== -1; sep = this.buffer.search(/\r?\n\r?\n/)) {
       const raw = this.buffer.slice(0, sep);
       this.buffer = this.buffer.slice(sep).replace(/^\r?\n\r?\n/, "");
       const data = raw

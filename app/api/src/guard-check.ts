@@ -14,7 +14,9 @@ export function loadCases(path = resolve(import.meta.dirname, "../../../eval/gua
     .map((l) => JSON.parse(l) as GuardCase);
 }
 
-export async function judge(c: GuardCase): Promise<{ ok: boolean; actual: string; entities: string[]; masked: string }> {
+export async function judge(
+  c: GuardCase,
+): Promise<{ ok: boolean; actual: string; entities: string[]; masked: string }> {
   const g = await guardInput(c.input);
   const entities = [...new Set(g.pii.findings.map((f) => f.entity))].sort();
   const actual = g.blocked ? "block" : entities.length > 0 ? "mask" : "pass";
@@ -22,16 +24,23 @@ export async function judge(c: GuardCase): Promise<{ ok: boolean; actual: string
   return { ok: actual === c.expect && entitiesOk, actual, entities, masked: g.masked };
 }
 
-async function viaApi(url: string, c: GuardCase): Promise<string> {
+// APIに送り、トレースIDとガードのイベントを返す。HTTPエラーや error イベントは失敗にする
+export async function viaApi(url: string, c: GuardCase): Promise<{ ok: boolean; summary: string }> {
   const res = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ sessionId: `guard-check-${Date.now()}`, message: c.input }),
   });
-  const lines = (await res.text()).split("\n").filter(Boolean).map((l) => JSON.parse(l));
+  if (!res.ok) return { ok: false, summary: `HTTP ${res.status}` };
+  const lines = (await res.text())
+    .split("\n")
+    .filter(Boolean)
+    .map((l) => JSON.parse(l));
   const traceId = lines.find((e) => e.type === "meta")?.traceId ?? "-";
   const guard = lines.filter((e) => e.type === "guard").map((e) => `${e.stage}:${e.action}`);
-  return `${traceId} ${guard.join(" ") || "(no guard event)"}`;
+  const error = lines.find((e) => e.type === "error");
+  if (error) return { ok: false, summary: `${traceId} error: ${error.message}` };
+  return { ok: true, summary: `${traceId} ${guard.join(" ") || "(no guard event)"}` };
 }
 
 async function main() {
@@ -39,9 +48,17 @@ async function main() {
   let failed = 0;
   for (const c of loadCases()) {
     const r = await judge(c);
-    if (!r.ok) failed++;
-    const extra = api ? await viaApi(api, c) : r.masked;
-    console.log(`${r.ok ? "OK  " : "FAIL"} ${c.id.padEnd(20)} expect=${c.expect} actual=${r.actual} [${r.entities.join(",")}] ${extra}`);
+    let ok = r.ok;
+    let extra = r.masked;
+    if (api) {
+      const a = await viaApi(api, c);
+      ok &&= a.ok;
+      extra = a.summary;
+    }
+    if (!ok) failed++;
+    console.log(
+      `${ok ? "OK  " : "FAIL"} ${c.id.padEnd(20)} expect=${c.expect} actual=${r.actual} [${r.entities.join(",")}] ${extra}`,
+    );
   }
   console.log(failed === 0 ? "all passed" : `${failed} failed`);
   process.exitCode = failed === 0 ? 0 : 1;

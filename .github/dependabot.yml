@@ -1,0 +1,44 @@
+# 依存の更新（ADR-013）。公開直後の版を避けるため cooldown を置く
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+    groups:
+      opentelemetry:
+        patterns: ["@opentelemetry/*"]
+      dev-tools:
+        dependency-type: development
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: docker
+    directory: /infra/aws-emulator
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: terraform
+    directories: ["/terraform/envs/local", "/terraform/modules/chat-store"]
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7

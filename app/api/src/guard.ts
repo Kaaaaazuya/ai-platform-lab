@@ -41,9 +41,17 @@ export const LOCAL_RULES: Rule[] = [
     score: 0.9,
     validate: luhn,
   },
-  { entity: "JP_MY_NUMBER", re: /(?<=(?:マイナンバー|個人番号)[\s:：はが]*)\d{4}[ -]?\d{4}[ -]?\d{4}(?!\d)/g, score: 0.9 },
+  {
+    entity: "JP_MY_NUMBER",
+    re: /(?<=(?:マイナンバー|個人番号)[\s:：はが]*)\d{4}[ -]?\d{4}[ -]?\d{4}(?!\d)/g,
+    score: 0.9,
+  },
   { entity: "JP_BANK_ACCOUNT", re: /(?<=口座(?:番号)?[\s:：はが]*(?:普通|当座)?[\s:：]*)\d{7}(?!\d)/g, score: 0.85 },
-  { entity: "JP_PHONE_NUMBER", re: /(?<![\d-])0(?:[789]0-?\d{4}-?\d{4}|\d{1,4}-\d{1,4}-\d{3,4})(?![\d-])/g, score: 0.8 },
+  {
+    entity: "JP_PHONE_NUMBER",
+    re: /(?<![\d-])0(?:[789]0-?\d{4}-?\d{4}|\d{1,4}-\d{1,4}-\d{3,4})(?![\d-])/g,
+    score: 0.8,
+  },
   { entity: "JP_POSTAL_CODE", re: /(?<=〒\s?)\d{3}-?\d{4}(?!\d)/g, score: 0.8 },
   {
     entity: "JP_PERSON_NAME",
@@ -63,7 +71,13 @@ export function detectLocal(text: string): Finding[] {
     for (const m of text.matchAll(rule.re)) {
       if (rule.validate && !rule.validate(m[0])) continue;
       const start = toCodePoint(text, m.index);
-      out.push({ entity: rule.entity, start, end: start + Array.from(m[0]).length, score: rule.score, engine: "local" });
+      out.push({
+        entity: rule.entity,
+        start,
+        end: start + Array.from(m[0]).length,
+        score: rule.score,
+        engine: "local",
+      });
     }
   }
   return out;
@@ -85,7 +99,13 @@ export async function detectPresidio(text: string): Promise<Finding[]> {
   });
   if (!res.ok) throw new Error(`presidio ${res.status}`);
   const results = (await res.json()) as PresidioResult[];
-  return results.map((r) => ({ entity: r.entity_type, start: r.start, end: r.end, score: r.score, engine: "presidio" }));
+  return results.map((r) => ({
+    entity: r.entity_type,
+    start: r.start,
+    end: r.end,
+    score: r.score,
+    engine: "presidio",
+  }));
 }
 
 export type PiiResult = { findings: Finding[]; engines: string[]; presidioError?: string };
@@ -123,7 +143,7 @@ export function mask(text: string, findings: Finding[]): string {
   let out = "";
   let pos = 0;
   for (const f of merged) {
-    out += chars.slice(pos, f.start).join("") + `<${f.entity}>`;
+    out += `${chars.slice(pos, f.start).join("")}<${f.entity}>`;
     pos = f.end;
   }
   return out + chars.slice(pos).join("");
@@ -131,10 +151,22 @@ export function mask(text: string, findings: Finding[]): string {
 
 // プロンプトインジェクションの典型パターン（日本語・英語）
 export const INJECTION_RULES: { id: string; re: RegExp }[] = [
-  { id: "ignore-instructions-en", re: /\b(ignore|disregard|forget)\b.{0,30}\b(previous|prior|above|all|earlier)\b.{0,20}\b(instructions?|prompts?|rules?)\b/i },
-  { id: "ignore-instructions-ja", re: /(これまで|以前|上記|前|今まで|最初)の?.{0,10}(指示|命令|ルール|プロンプト|設定).{0,6}(無視|忘れ|破棄|リセット)/ },
-  { id: "reveal-system-prompt", re: /(system\s*prompt|システム\s*プロンプト|初期(設定|指示)).{0,12}(show|reveal|print|教え|表示|出力|見せ|開示)/i },
-  { id: "role-override", re: /\b(you are now|act as|pretend to be)\b|(あなたは|お前は)(今から|これから).{0,20}(として|になりきって|です)/i },
+  {
+    id: "ignore-instructions-en",
+    re: /\b(ignore|disregard|forget)\b.{0,30}\b(previous|prior|above|all|earlier)\b.{0,20}\b(instructions?|prompts?|rules?)\b/i,
+  },
+  {
+    id: "ignore-instructions-ja",
+    re: /(これまで|以前|上記|前|今まで|最初)の?.{0,10}(指示|命令|ルール|プロンプト|設定).{0,6}(無視|忘れ|破棄|リセット)/,
+  },
+  {
+    id: "reveal-system-prompt",
+    re: /(system\s*prompt|システム\s*プロンプト|初期(設定|指示)).{0,12}(show|reveal|print|教え|表示|出力|見せ|開示)/i,
+  },
+  {
+    id: "role-override",
+    re: /\b(you are now|act as|pretend to be)\b|(あなたは|お前は)(今から|これから).{0,20}(として|になりきって|です)/i,
+  },
   { id: "jailbreak", re: /\b(jailbreak|DAN mode|developer mode)\b|(開発者モード|脱獄|制限を(解除|外し|無視))/i },
 ];
 
@@ -155,7 +187,13 @@ export async function guardInput(text: string): Promise<GuardResult> {
   const pii = await detectPii(text);
   const masked = mask(text, pii.findings);
   if (injection.length > 0) {
-    return { blocked: true, reason: "プロンプトインジェクションの疑いがあるため回答できません", injection, masked, pii };
+    return {
+      blocked: true,
+      reason: "プロンプトインジェクションの疑いがあるため回答できません",
+      injection,
+      masked,
+      pii,
+    };
   }
   return { blocked: false, injection, masked, pii };
 }

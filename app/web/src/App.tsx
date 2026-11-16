@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { streamChat, type ChatEvent } from "./ndjson";
+import { type ChatEvent, streamChat } from "./ndjson";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8787/chat";
 // Langfuse でトレースを開くためのURL（compose.yaml の LANGFUSE_INIT_PROJECT_ID）
@@ -7,6 +7,7 @@ const LANGFUSE_URL = import.meta.env.VITE_LANGFUSE_URL ?? "http://localhost:3000
 
 type Source = Extract<ChatEvent, { type: "sources" }>["sources"][number];
 type Message = {
+  id: string;
   role: "user" | "assistant";
   text: string;
   sources?: Source[];
@@ -39,7 +40,11 @@ export function App() {
     if (!message || busy) return;
     setInput("");
     setBusy(true);
-    setMessages((prev) => [...prev, { role: "user", text: message }, { role: "assistant", text: "" }]);
+    setMessages((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), role: "user", text: message },
+      { id: crypto.randomUUID(), role: "assistant", text: "" },
+    ]);
     abort.current = new AbortController();
     try {
       for await (const e of streamChat(API_URL, { sessionId, message }, abort.current.signal)) {
@@ -72,10 +77,10 @@ export function App() {
           <p className="hint">取り込んだドキュメントについて質問してください（例：トレースとスパンの違いは？）</p>
         )}
         {messages.map((m, i) => (
-          <article key={i} className={m.role}>
+          <article key={m.id} className={m.role}>
             <div className="text">{m.text || (busy && i === messages.length - 1 ? "…" : "")}</div>
-            {m.guard?.map((g, j) => (
-              <div key={j} className="guard">
+            {m.guard?.map((g) => (
+              <div key={g} className="guard">
                 {g}
               </div>
             ))}
@@ -84,7 +89,10 @@ export function App() {
               <ol className="sources">
                 {m.sources.map((s) => (
                   <li key={s.n}>
-                    [{s.n}] {s.heading} <small>({s.source}, {s.score.toFixed(2)})</small>
+                    [{s.n}] {s.heading}{" "}
+                    <small>
+                      ({s.source}, {s.score.toFixed(2)})
+                    </small>
                   </li>
                 ))}
               </ol>

@@ -2,8 +2,8 @@
 // NDJSON のストリーミングで返す（AWS Emulator が API Gateway のストリーミングを
 // 再現するかは未確認のため。ADR-011 の確認事項）。
 import { createServer } from "node:http";
+import { type ChatRequest, parseRequest, runChat } from "./chat.js";
 import { config } from "./config.js";
-import { parseRequest, runChat } from "./chat.js";
 
 const cors = {
   "access-control-allow-origin": config.corsOrigin,
@@ -27,7 +27,7 @@ const server = createServer(async (req, res) => {
 
   let raw = "";
   for await (const part of req) raw += part;
-  let chatReq;
+  let chatReq: ChatRequest;
   try {
     chatReq = parseRequest(JSON.parse(raw || "null"));
   } catch (e) {
@@ -42,7 +42,7 @@ const server = createServer(async (req, res) => {
     "cache-control": "no-cache",
     "x-session-id": chatReq.sessionId,
   });
-  await runChat(chatReq, (e) => res.write(JSON.stringify(e) + "\n"));
+  await runChat(chatReq, (e) => res.write(`${JSON.stringify(e)}\n`));
   res.end();
 });
 

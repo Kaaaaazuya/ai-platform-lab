@@ -3,7 +3,7 @@
 国内外の社内AI基盤（Uber GenAI Gateway、デジタル庁「源内」、東京海上日動システムズの全社生成AI実行基盤など）に共通する「アプリ → AIゲートウェイ → 複数モデル」の構成を、個人のローカル環境で再現して学ぶ。基盤はAWS Emulator（2026年11月11日GA）とOSSで組み、実AWSは差分の検証だけに使う。
 
 !!! info "現在地"
-    ADRは12件で、ADR-001・002・004・005・006・011は決定済み。M1＋M2を実装済みで、M3（ガードレール）を実装中。ADR-003・009はMVPのために仮決め（pgvector＋公開技術ドキュメント）。
+    ADRは13件で、ADR-001・002・004・005・006・011・013は決定済み。M1＋M2を実装済みで、M3（ガードレール）を実装中。ADR-003・009はMVPのために仮決め（pgvector＋公開技術ドキュメント）。
 
 ## 背景と目的
 
@@ -83,6 +83,7 @@ flowchart TB
 | 改善 | 評価ランナー | CIでの回帰評価、LLM-as-judge | ローカル / CI | [008](adr/0008-evaluation.md) |
 | 基盤 | IaC（Terraform） | エミュレーターと実AWSに同じコードで構築 | CI/CD | [006](adr/0006-iac-cicd.md) |
 | 基盤 | CI/CD | 静的チェック、エミュレーターへのapplyとテスト、実AWSへの承認付きapply | GitHub Actions | [006](adr/0006-iac-cicd.md) |
+| 基盤 | 品質・サプライチェーン | リンター、シークレット検出、依存パッケージの検査と更新 | lefthook（ローカル）、GitHub Actions、Dependabot | [013](adr/0013-dev-quality-supply-chain.md) |
 
 APIやWebページを隔離して動かす実行基盤は、Kubernetes＋gVisorで追加する方向（[ADR-010](adr/0010-sandbox.md)、未決定）。
 
@@ -284,7 +285,7 @@ flowchart LR
 
 ## 未解決事項とADR一覧
 
-ADRは12件で、ADR-001・002・004・005・006・011は決定済み。残りは作りながら詰める。一覧は [ADR](adr/index.md) を参照。
+ADRは13件で、ADR-001・002・004・005・006・011・013は決定済み。残りは作りながら詰める。一覧は [ADR](adr/index.md) を参照。
 
 ## 参考資料
 

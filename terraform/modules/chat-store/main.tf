@@ -1,4 +1,14 @@
 # チャットの保存先: 会話履歴（DynamoDB）と RAG の原文書（S3）
+terraform {
+  required_version = ">= 1.6"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+}
+
 variable "name_prefix" {
   type        = string
   description = "リソース名の接頭辞"

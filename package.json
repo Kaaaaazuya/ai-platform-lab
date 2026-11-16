@@ -7,11 +7,19 @@
     "app/web"
   ],
   "scripts": {
+    "lint": "biome check .",
+    "format": "biome check --write .",
     "typecheck": "npm run typecheck --workspaces",
     "test": "npm run test --workspaces --if-present",
     "build": "npm run build --workspaces"
   },
   "engines": {
     "node": ">=22"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.8"
+  },
+  "overrides": {
+    "rimraf": "6.1.4"
   }
 }

@@ -1,0 +1,14 @@
+# シークレットの検出（ADR-013）。既定のルールに、このリポジトリ固有の例外だけを足す
+[extend]
+useDefault = true
+
+[allowlist]
+description = "サンプル値・ローカル専用の既定値"
+paths = [
+  '''package-lock\.json''',
+  '''\.env\.example''',
+]
+# compose.yaml の `${VAR:-changeme...}` はローカル専用の既定値（127.0.0.1 にしか公開しない）
+regexes = [
+  '''\$\{[A-Z_]+:-[^}]*\}''',
+]

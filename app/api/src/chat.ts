@@ -1,6 +1,6 @@
 // RAG チャットの本体。Lambda ハンドラーとローカルサーバーの両方から呼ぶ。
 // 出力は NDJSON の行（ChatEvent）として emit に渡す（ADR-011: ストリーミング）。
-import { SpanStatusCode, context, trace, type Span } from "@opentelemetry/api";
+import { context, type Span, SpanStatusCode, trace } from "@opentelemetry/api";
 import { guardInput, guardOutput, type PiiResult } from "./guard.js";
 import { chatStream, embed } from "./llm.js";
 import { buildMessages, type Retrieved } from "./prompt.js";
@@ -85,7 +85,12 @@ export async function runChat(req: ChatRequest, emit: (e: ChatEvent) => void): P
         try {
           const [vec] = await embed([question], req.sessionId);
           const hits = await search(vec);
-          setIO(span, "RETRIEVER", question, hits.map((h) => ({ heading: h.heading, score: h.score })));
+          setIO(
+            span,
+            "RETRIEVER",
+            question,
+            hits.map((h) => ({ heading: h.heading, score: h.score })),
+          );
           span.setAttribute("rag.top_score", hits[0]?.score ?? 0);
           return hits;
         } finally {
