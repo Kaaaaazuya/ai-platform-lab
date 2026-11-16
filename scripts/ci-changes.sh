@@ -26,12 +26,13 @@ if [[ -z "$base" || "$base" =~ ^0+$ ]] || ! git cat-file -e "${base}^{commit}" 2
   exit 0
 fi
 
-files="$(git diff --name-only "$base" HEAD)"
 echo "変更されたファイル:" >&2
-echo "${files:-（なし）}" >&2
 
-while IFS= read -r f; do
+# --no-renames: 移動したファイルは元と先の両方の名前で判定する
+# -z: 日本語などのファイル名をそのまま扱う（Git の表示用の引用符を付けない）
+while IFS= read -r -d '' f; do
   [[ -z "$f" ]] && continue
+  echo "  $f" >&2
   case "$f" in
     .github/workflows/ci.yml | scripts/ci-changes.sh)
       set_all true
@@ -62,6 +63,6 @@ while IFS= read -r f; do
   case "$f" in
     */Dockerfile | Dockerfile) run[docker]=true ;;
   esac
-done <<<"$files"
+done < <(git diff --name-only --no-renames -z "$base" HEAD)
 
 emit
