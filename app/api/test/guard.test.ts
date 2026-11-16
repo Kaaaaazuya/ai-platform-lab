@@ -1,7 +1,9 @@
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 import { beforeAll, describe, expect, it } from "vitest";
-import { config } from "../src/config.js";
+import { config, positiveNumber } from "../src/config.js";
 import { detectInjection, detectLocal, luhn, mask } from "../src/guard.js";
-import { judge, loadCases } from "../src/guard-check.js";
+import { judge, loadCases, viaApi } from "../src/guard-check.js";
 
 beforeAll(() => {
   // CIでは Presidio を立てないので、日本向けの独自ルールだけで判定する
@@ -52,4 +54,34 @@ describe("eval/guard-cases.jsonl", () => {
       expect(r.ok, `masked: ${r.masked}`).toBe(true);
     });
   }
+});
+
+describe("positiveNumber", () => {
+  it("正の有限数でなければ既定値に戻す", () => {
+    expect(positiveNumber("1500", 2000)).toBe(1500);
+    for (const v of [undefined, "", "abc", "0", "-1", "Infinity"]) expect(positiveNumber(v, 2000)).toBe(2000);
+  });
+});
+
+describe("viaApi", () => {
+  const c = { id: "x", input: "hello", expect: "pass" as const };
+  const serve = (status: number, body: string) =>
+    new Promise<{ url: string; close: () => void }>((ok) => {
+      const s = createServer((_, res) => res.writeHead(status).end(body)).listen(0, "127.0.0.1", () => {
+        const { port } = s.address() as AddressInfo;
+        ok({ url: `http://127.0.0.1:${port}/chat`, close: () => s.close() });
+      });
+    });
+
+  it("HTTPエラーは失敗にする", async () => {
+    const srv = await serve(404, "");
+    expect((await viaApi(srv.url, c)).ok).toBe(false);
+    srv.close();
+  });
+
+  it("error イベントは失敗にする", async () => {
+    const srv = await serve(200, '{"type":"meta","traceId":"t1"}\n{"type":"error","message":"boom"}\n');
+    expect(await viaApi(srv.url, c)).toEqual({ ok: false, summary: "t1 error: boom" });
+    srv.close();
+  });
 });

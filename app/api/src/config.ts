@@ -1,6 +1,12 @@
 // 設定はすべて環境変数から読む（.env.example を参照）
 const env = (name: string, fallback: string): string => process.env[name] ?? fallback;
 
+// 正の有限数でなければ既定値に戻す（空文字や NaN を AbortSignal.timeout に渡さない）
+export const positiveNumber = (value: string | undefined, fallback: number): number => {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+};
+
 export const config = {
   // AIゲートウェイ（Envoy AI Gateway）の OpenAI 互換 API。アプリはここだけを呼ぶ（ADR-001）
   gatewayUrl: env("GATEWAY_URL", "http://127.0.0.1:1975/v1"),
@@ -23,7 +29,7 @@ export const config = {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean),
-  guardTimeoutMs: Number(env("GUARD_TIMEOUT_MS", "2000")),
+  guardTimeoutMs: positiveNumber(process.env.GUARD_TIMEOUT_MS, 2000),
 
   port: Number(env("PORT", "8787")),
   corsOrigin: env("CORS_ORIGIN", "http://localhost:5173"),
