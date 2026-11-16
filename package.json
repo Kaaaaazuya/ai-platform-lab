@@ -1,0 +1,17 @@
+{
+  "name": "ai-platform-lab",
+  "private": true,
+  "description": "個人学習用 AI開発プラットフォーム（AWS Emulator＋Envoy AI Gateway＋Ollama＋OTel/Langfuse/Grafana）",
+  "workspaces": [
+    "app/api",
+    "app/web"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build --workspaces"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

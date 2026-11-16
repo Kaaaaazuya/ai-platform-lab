@@ -1,0 +1,71 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci || npm install
+      - run: npm run typecheck
+      - run: npm test
+
+  terraform-static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive terraform
+      - run: terraform -chdir=terraform/envs/local init -backend=false -input=false
+      - run: terraform -chdir=terraform/envs/local validate
+
+  # ADR-006: PRごとに AWS Emulator へ apply してスモークテスト
+  terraform-emulator:
+    needs: terraform-static
+    runs-on: ubuntu-latest
+    env:
+      AWS_EMULATOR_DEB_URL: ${{ vars.AWS_EMULATOR_DEB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - name: Install AWS Emulator
+        run: |
+          if [ -z "$AWS_EMULATOR_DEB_URL" ]; then
+            echo "::warning::repo variable AWS_EMULATOR_DEB_URL is not set; skipping emulator job"
+            echo "SKIP=1" >> "$GITHUB_ENV"; exit 0
+          fi
+          curl -fsSL -o /tmp/aws-emulator.deb "$AWS_EMULATOR_DEB_URL"
+          sudo apt-get install -y /tmp/aws-emulator.deb
+      - name: Start emulator
+        if: env.SKIP != '1'
+        run: |
+          nohup aws-emulator -p 9297 --telemetry off > /tmp/emulator.log 2>&1 &
+          ./scripts/wait-emulator.sh
+      - name: Apply to emulator
+        if: env.SKIP != '1'
+        run: |
+          source scripts/emulator-env.sh
+          terraform -chdir=terraform/envs/local init -input=false
+          terraform -chdir=terraform/envs/local apply -auto-approve -input=false
+      - name: Smoke test
+        if: env.SKIP != '1'
+        run: |
+          source scripts/emulator-env.sh
+          aws dynamodb describe-table --table-name ai-platform-lab-conversations --query 'Table.TableStatus'
+          aws s3api head-bucket --bucket ai-platform-lab-docs
+      - name: Emulator log
+        if: failure() && env.SKIP != '1'
+        run: tail -n 200 /tmp/emulator.log

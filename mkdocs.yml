@@ -1,0 +1,65 @@
+site_name: ai-platform-lab
+site_description: 個人学習用 AI開発プラットフォームのデザインドックとADR
+site_url: https://kaaaaazuya.github.io/ai-platform-lab/
+repo_url: https://github.com/Kaaaaazuya/ai-platform-lab
+repo_name: Kaaaaazuya/ai-platform-lab
+edit_uri: edit/main/docs/
+docs_dir: docs
+
+theme:
+  name: material
+  language: ja
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - content.code.copy
+    - search.highlight
+  palette:
+    - scheme: default
+      primary: indigo
+      toggle:
+        icon: material/brightness-7
+        name: ダークモードに切り替え
+    - scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/brightness-4
+        name: ライトモードに切り替え
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+plugins:
+  - search:
+      lang: ja
+
+nav:
+  - デザインドック: index.md
+  - セットアップ: setup.md
+  - ADR:
+      - adr/index.md
+      - "001 LLM推論のローカル再現": adr/0001-local-llm.md
+      - "002 AIゲートウェイ": adr/0002-ai-gateway.md
+      - "003 ベクトルストア": adr/0003-vector-store.md
+      - "004 観測基盤": adr/0004-observability.md
+      - "005 ガードレールとログ方針": adr/0005-guardrails.md
+      - "006 IaCとCI/CD": adr/0006-iac-cicd.md
+      - "007 実AWS検証の範囲と予算": adr/0007-aws-budget.md
+      - "008 評価の仕組み": adr/0008-evaluation.md
+      - "009 題材とデータ": adr/0009-dataset.md
+      - "010 アプリ実行サンドボックス": adr/0010-sandbox.md
+      - "011 チャットの応答方式": adr/0011-chat-streaming.md
+      - "012 実装ライン": adr/0012-software-factory.md

@@ -1,0 +1,54 @@
+# OTel Collector: すべてのテレメトリを受けて、2か所に振り分ける（ADR-004）
+#   - Grafana系（lgtm: Tempo / Prometheus / Loki）: 全トレース・メトリクス・ログ → 死活監視
+#   - Langfuse: LLMに関係するトレース → AI処理の詳細と評価
+# 同じトレースIDが両方に入るので、Grafana で見つけたトレースを Langfuse で開ける。
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 400
+  # Langfuse へは、アプリ（rag-api）とゲートウェイ（aigw）のトレースだけを送る
+  filter/langfuse:
+    error_mode: ignore
+    traces:
+      span:
+        - 'resource.attributes["service.name"] != "rag-api" and resource.attributes["service.name"] != "aigw"'
+
+exporters:
+  otlp/lgtm:
+    endpoint: lgtm:4317
+    tls:
+      insecure: true
+  otlphttp/langfuse:
+    endpoint: http://langfuse-web:3000/api/public/otel
+    headers:
+      Authorization: Basic ${env:LANGFUSE_AUTH}
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    traces/grafana:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/lgtm]
+    traces/langfuse:
+      receivers: [otlp]
+      processors: [memory_limiter, filter/langfuse, batch]
+      exporters: [otlphttp/langfuse]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/lgtm]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/lgtm]

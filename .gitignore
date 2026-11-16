@@ -1,0 +1,12 @@
+node_modules/
+dist/
+site/
+.env
+data/docs/*
+!data/docs/.gitkeep
+infra/aws-emulator/*.rpm
+terraform/**/.terraform/
+terraform/**/*.tfstate
+terraform/**/*.tfstate.*
+terraform/**/.terraform.lock.hcl
+.DS_Store
