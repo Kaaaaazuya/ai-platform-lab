@@ -55,7 +55,7 @@ ingest: ## ドキュメントを埋め込んで pgvector に入れる
 	cd app/api && npm run ingest -- ../../data/docs
 
 api: ## アプリAPIを起動（:8787）
-	set -a; if [ -f .env ]; then source ./.env || { echo ".env を読めませんでした" >&2; exit 1; }; fi; set +a; source scripts/emulator-env.sh && cd app/api && npm run dev
+	set -a; if [ -f .env ]; then set -e; source ./.env; set +e; fi; set +a; source scripts/emulator-env.sh && cd app/api && npm run dev
 
 web: ## チャット画面を起動（:5173）
 	cd app/web && npm run dev
@@ -67,7 +67,7 @@ guard-check-api: ## 同じケースをアプリAPIに流してトレースを作
 	cd app/api && npm run guard:check -- --api http://127.0.0.1:8787/chat
 
 eval: ## RAGの評価を実行して eval/reports/latest.json に書く（make up・tf-apply・ingest の後）
-	set -a; if [ -f .env ]; then source ./.env || { echo ".env を読めませんでした" >&2; exit 1; }; fi; set +a; source scripts/emulator-env.sh && cd app/api && npm run eval
+	set -a; if [ -f .env ]; then set -e; source ./.env; set +e; fi; set +a; source scripts/emulator-env.sh && cd app/api && npm run eval
 
 eval-baseline: ## 今回の評価結果をベースラインにする
 	cp eval/reports/latest.json eval/baseline.json
