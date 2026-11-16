@@ -41,7 +41,7 @@
 ### CIとツールの固定
 
 - GitHub Actions はタグではなくコミットSHAで指定する。タグは後から別のコミットに付け替えられるため
-- CIでダウンロードするツール（gitleaks など）は、版と SHA-256 を固定して検証する
+- CIでダウンロードするツール（gitleaks、actionlint、hadolint）は、版と SHA-256 を固定して検証する。AWS Emulator のパッケージ（リポジトリ変数のURLから取得）は例外で、まだ検証していない
 - `actions/checkout` は `persist-credentials: false` にして、後の手順にトークンを残さない
 
 ## 学ぶポイント

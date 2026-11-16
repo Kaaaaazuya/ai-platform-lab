@@ -43,6 +43,7 @@ AWSのサービスのAPIを手元のマシンで再現するツール。AWSが20
 ## 動かして確かめる
 
 ```bash
+make env   # 初回だけ。.env がないと compose が起動しない
 make up
 source scripts/emulator-env.sh
 aws dynamodb list-tables

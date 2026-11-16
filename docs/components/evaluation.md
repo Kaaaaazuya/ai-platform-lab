@@ -62,6 +62,8 @@ make eval-compare    # ベースラインと比べる
 make eval-baseline   # 良くなったら、今回をベースラインにする
 ```
 
+初めて動かすときはベースラインがないので、比較は飛ばされる。`make eval` の後に `make eval-baseline` を実行し、`eval/baseline.json` と `eval/reports/latest.json` をコミットする。
+
 ## 学ぶポイント
 
 - 検索と生成を分けて評価する理由（どちらが悪いかで直す場所が違う）

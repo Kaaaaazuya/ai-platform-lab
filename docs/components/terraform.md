@@ -42,6 +42,7 @@ provider のブロックには接続先を書かない。AWS SDK と同じ環境
 ## 動かして確かめる
 
 ```bash
+make env   # 初回だけ
 make up
 make tf-apply
 source scripts/emulator-env.sh && aws dynamodb describe-table --table-name ai-platform-lab-conversations

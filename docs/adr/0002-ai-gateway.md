@@ -26,7 +26,7 @@
 PythonのOSSで、100以上のLLMプロバイダーをOpenAI互換APIにまとめるプロキシ。
 
 - 長所：仮想キー、キーごとの予算、利用ログ、フォールバック、OTel連携が揃っている。管理画面がある。情報が多い
-- 短所：PostgresとRedisが要る。SSOなどはEnterprise版
+- 短所：仮想キーや予算を使うにはPostgresが要る（Redisは複数台で動かすときなどに使う任意の部品）。SSOなどはEnterprise版
 - 学べること：社内AI基盤の「運用者の画面」。仮想キーと予算管理の考え方
 
 ### 案B：Envoy AI Gateway

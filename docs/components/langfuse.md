@@ -51,7 +51,7 @@ Langfuse は OTLP でspanを受け取り、OTelのトレースIDをそのまま�
 
 1. チャット画面で質問し、回答の下のリンクから Langfuse のトレースを開く
 2. `rag.guard.input`、`rag.retrieve`、ゲートウェイのLLMのspanが1本のトレースにつながっているかを見る
-3. `make eval` の後、データセット `rag-eval` の実験一覧を見る
+3. `make eval` の後、データセット `rag-eval` の実験一覧を見る。`make eval` は `.env` の鍵を読み込んでから動く
 
 ## 学ぶポイント
 

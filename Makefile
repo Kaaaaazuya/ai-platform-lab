@@ -67,7 +67,7 @@ guard-check-api: ## 同じケースをアプリAPIに流してトレースを作
 	cd app/api && npm run guard:check -- --api http://127.0.0.1:8787/chat
 
 eval: ## RAGの評価を実行して eval/reports/latest.json に書く（make up・tf-apply・ingest の後）
-	source scripts/emulator-env.sh && cd app/api && npm run eval
+	set -a; [ -f .env ] && source ./.env; set +a; source scripts/emulator-env.sh && cd app/api && npm run eval
 
 eval-baseline: ## 今回の評価結果をベースラインにする
 	cp eval/reports/latest.json eval/baseline.json
