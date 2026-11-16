@@ -1,44 +1,96 @@
-# 依存の更新（ADR-013）。公開直後の版を避けるため cooldown を置く
+# 依存の更新（ADR-013）
+# - 学習用のリポジトリなので月1回にまとめて見る。すぐ届くセキュリティ修正は npm と pip だけ（ADR-013）
+# - 種類ごとに、パッチ、マイナー、メジャーをそれぞれ1件のPRにまとめる
+# - パッチのPR（グループ名が *-patch）は、CI が通れば自動でマージする（dependabot-auto-merge.yml）
+# - 公開直後の版を避けるため cooldown を置く
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
       semver-major-days: 14
     groups:
-      opentelemetry:
-        patterns: ["@opentelemetry/*"]
-      dev-tools:
-        dependency-type: development
+      npm-patch:
+        applies-to: version-updates
+        update-types: [patch]
+      npm-minor:
+        applies-to: version-updates
+        update-types: [minor]
+      npm-major:
+        applies-to: version-updates
+        update-types: [major]
     open-pull-requests-limit: 5
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
+    groups:
+      actions-patch:
+        update-types: [patch]
+      actions-minor:
+        update-types: [minor]
+      actions-major:
+        update-types: [major]
 
+  # Langfuse が中で使うもの（ClickHouse、Redis）は、Langfuse の対応に合わせて手で上げる
   - package-ecosystem: docker-compose
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
+    ignore:
+      - dependency-name: "clickhouse/clickhouse-server"
+      - dependency-name: "redis"
+    groups:
+      compose-patch:
+        update-types: [patch]
+      compose-minor:
+        update-types: [minor]
+      compose-major:
+        update-types: [major]
 
   - package-ecosystem: docker
     directory: /infra/aws-emulator
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
+    groups:
+      docker-patch:
+        update-types: [patch]
 
   - package-ecosystem: terraform
     directories: ["/terraform/envs/local", "/terraform/modules/chat-store"]
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
+    groups:
+      terraform-patch:
+        update-types: [patch]
+      terraform-minor:
+        update-types: [minor]
+      terraform-major:
+        update-types: [major]
+
+  # ドキュメントのビルドに使う MkDocs など
+  - package-ecosystem: pip
+    directory: /docs
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      docs-python-patch:
+        update-types: [patch]
+      docs-python-minor:
+        update-types: [minor]
+      docs-python-major:
+        update-types: [major]
