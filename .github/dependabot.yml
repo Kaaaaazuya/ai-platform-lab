@@ -1,6 +1,7 @@
 # 依存の更新（ADR-013）
 # - 学習用のリポジトリなので月1回にまとめて見る。すぐ届くセキュリティ修正は npm と pip だけ（ADR-013）
-# - 種類ごとに、マイナーとパッチを1件、メジャーを1件のPRにまとめる
+# - 種類ごとに、パッチ、マイナー、メジャーをそれぞれ1件のPRにまとめる
+# - パッチのPR（グループ名が *-patch）は、CI が通れば自動でマージする（dependabot-auto-merge.yml）
 # - 公開直後の版を避けるため cooldown を置く
 version: 2
 updates:
@@ -12,9 +13,12 @@ updates:
       default-days: 7
       semver-major-days: 14
     groups:
+      npm-patch:
+        applies-to: version-updates
+        update-types: [patch]
       npm-minor:
         applies-to: version-updates
-        update-types: [minor, patch]
+        update-types: [minor]
       npm-major:
         applies-to: version-updates
         update-types: [major]
@@ -27,8 +31,10 @@ updates:
     cooldown:
       default-days: 7
     groups:
+      actions-patch:
+        update-types: [patch]
       actions-minor:
-        update-types: [minor, patch]
+        update-types: [minor]
       actions-major:
         update-types: [major]
 
@@ -43,8 +49,10 @@ updates:
       - dependency-name: "clickhouse/clickhouse-server"
       - dependency-name: "redis"
     groups:
+      compose-patch:
+        update-types: [patch]
       compose-minor:
-        update-types: [minor, patch]
+        update-types: [minor]
       compose-major:
         update-types: [major]
 
@@ -54,6 +62,9 @@ updates:
       interval: monthly
     cooldown:
       default-days: 7
+    groups:
+      docker-patch:
+        update-types: [patch]
 
   - package-ecosystem: terraform
     directories: ["/terraform/envs/local", "/terraform/modules/chat-store"]
@@ -62,8 +73,10 @@ updates:
     cooldown:
       default-days: 7
     groups:
+      terraform-patch:
+        update-types: [patch]
       terraform-minor:
-        update-types: [minor, patch]
+        update-types: [minor]
       terraform-major:
         update-types: [major]
 
@@ -75,7 +88,9 @@ updates:
     cooldown:
       default-days: 7
     groups:
+      docs-python-patch:
+        update-types: [patch]
       docs-python-minor:
-        update-types: [minor, patch]
+        update-types: [minor]
       docs-python-major:
         update-types: [major]
