@@ -137,7 +137,7 @@ M3までは型チェックとテスト、`terraform fmt` しかなく、リン�
 
 ### 影響
 
-- 頻度に関係なくすぐ届くセキュリティ修正（Dependabot security updates）は、npm と pip だけだ。ほかは月1回の更新で届く
+- 頻度に関係なくすぐ届くセキュリティ修正（Dependabot security updates）は、npm と pip だけだ。ほかは、月1回の更新で新しい版に上がることはあるが、脆弱性を見張ってはいない（イメージや Terraform の脆弱性の検査は、まだ入れていない）
     - Docker、compose、Terraform は、GitHub がセキュリティ修正のPRに対応していない
     - Actions は、SHAで固定しているので、GitHub が脆弱性の通知（Dependabot alerts）を出さない
 - 変数でタグを上書きする使い方はなくなる。別の版を試したいときは、compose.yaml を書き換えるか、`compose.override.yaml` を使う

@@ -16,7 +16,7 @@
 | Terraform | tflint | CI |
 | 秘密情報 | gitleaks | コミット前（staged の差分）、CI（全履歴） |
 | npm の依存 | `npm ci`、`npm audit`、`npm audit signatures`、install スクリプトの許可リスト | CI |
-| 依存の更新 | Dependabot（cooldown 7日、種類ごとにまとめる） | 月1回（すぐ届くセキュリティ修正は npm と pip だけ。ほかは月1回の更新で届く。ClickHouse と Redis は Langfuse に合わせて手で上げる） |
+| 依存の更新 | Dependabot（cooldown 7日、種類ごとにまとめる） | 月1回（すぐ届くセキュリティ修正は npm と pip だけ。ほかの脆弱性は見張っていない。ClickHouse と Redis は Langfuse に合わせて手で上げる） |
 
 関連ADR：[ADR-013](../adr/0013-dev-quality-supply-chain.md)、文章の決まりは[文章ガイド](../writing-guide.md)
 
