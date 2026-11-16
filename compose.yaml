@@ -159,14 +159,14 @@ services:
 
   # ---------- Langfuse ----------
   langfuse-worker:
-    image: docker.langfuse.com/langfuse/langfuse-worker:4
+    image: docker.langfuse.com/langfuse/langfuse-worker:4.81
     restart: unless-stopped
     depends_on: *langfuse-depends
     environment:
       <<: *langfuse-env
 
   langfuse-web:
-    image: docker.langfuse.com/langfuse/langfuse:4
+    image: docker.langfuse.com/langfuse/langfuse:4.81
     restart: unless-stopped
     depends_on: *langfuse-depends
     ports:

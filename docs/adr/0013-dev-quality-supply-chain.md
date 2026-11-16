@@ -142,4 +142,5 @@ M3までは型チェックとテスト、`terraform fmt` しかなく、リン�
     - Actions は、SHAで固定しているので、GitHub が脆弱性の通知（Dependabot alerts）を出さない
 - 変数でタグを上書きする使い方はなくなる。別の版を試したいときは、compose.yaml を書き換えるか、`compose.override.yaml` を使う
 - ClickHouse と Redis の更新は、Langfuse を上げるときに、Langfuse が出している compose の版と見比べて上げる
+- Langfuse はマイナー版（`4.81` など）までタグに書く。`:4` のままだと、Dependabot はそれより細かい版を出さない。パッチ版は、同じマイナー版のタグのまま入れ替わる
 
