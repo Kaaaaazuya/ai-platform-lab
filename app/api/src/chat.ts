@@ -45,7 +45,10 @@ function setGuardAttrs(span: Span, pii: PiiResult, injection: string[] = [], blo
   return entities;
 }
 
-export async function runChat(req: ChatRequest, emit: (e: ChatEvent) => void): Promise<void> {
+// 評価ランナー（eval/run.ts）が検索結果を受け取るためのフック
+export type ChatHooks = { onRetrieved?: (retrieved: Retrieved[]) => void };
+
+export async function runChat(req: ChatRequest, emit: (e: ChatEvent) => void, hooks: ChatHooks = {}): Promise<void> {
   await tracer.startActiveSpan("rag.chat", async (root) => {
     const traceId = root.spanContext().traceId;
     root.setAttribute("langfuse.trace.name", "rag-chat");
@@ -97,6 +100,7 @@ export async function runChat(req: ChatRequest, emit: (e: ChatEvent) => void): P
           span.end();
         }
       });
+      hooks.onRetrieved?.(retrieved);
 
       const raw = await chatStream(
         buildMessages(question, history, retrieved),

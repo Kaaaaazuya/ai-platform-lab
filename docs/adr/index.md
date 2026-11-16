@@ -11,7 +11,7 @@
 | [005](0005-guardrails.md) | ガードレールの実装位置とログ方針 | Accepted | アプリAPIからPresidio＋日本向けルール。ログはマスク後のみ |
 | [006](0006-iac-cicd.md) | IaCとCI/CDでの検証方式 | Accepted | Terraform。PRはAWS Emulator、mainマージ後は承認付きで実AWS |
 | [007](0007-aws-budget.md) | 実AWSで検証する範囲と予算 | Proposed | 未定（M5で決める） |
-| [008](0008-evaluation.md) | 評価の仕組み | Proposed | 未定（M4で決める） |
+| [008](0008-evaluation.md) | 評価の仕組み | Proposed（実装済み） | Langfuseに記録し、評価ランナーは自作。CIはベースラインとの差分を見る |
 | [009](0009-dataset.md) | 題材にするユースケースとデータ | Proposed | MVPは公開技術ドキュメント（OpenTelemetry）で仮決め |
 | [010](0010-sandbox.md) | アプリ実行サンドボックス | Proposed | K8s＋gVisorの方向。ローカルK8sと載せ方は未定 |
 | [011](0011-chat-streaming.md) | チャットの応答方式 | Accepted | API Gateway REST（ストリーミング）＋Lambda |

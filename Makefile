@@ -4,7 +4,7 @@ CHAT_MODEL ?= qwen2.5:7b
 EMBED_MODEL ?= bge-m3
 TF_DIR := terraform/envs/local
 
-.PHONY: help env models up down logs emulator-wait tf-init tf-apply tf-destroy docs ingest api web test lint hooks guard-check guard-check-api docs-serve
+.PHONY: help env models up down logs emulator-wait tf-init tf-apply tf-destroy docs ingest api web test lint hooks eval eval-baseline eval-compare guard-check guard-check-api docs-serve
 
 help: ## ターゲット一覧
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-14s %s\n", $$1, $$2}'
@@ -65,6 +65,15 @@ guard-check: ## ガードレールのケース（eval/guard-cases.jsonl）を判
 
 guard-check-api: ## 同じケースをアプリAPIに流してトレースを作る
 	cd app/api && npm run guard:check -- --api http://127.0.0.1:8787/chat
+
+eval: ## RAGの評価を実行して eval/reports/latest.json に書く（make up・tf-apply・ingest の後）
+	source scripts/emulator-env.sh && cd app/api && npm run eval
+
+eval-baseline: ## 今回の評価結果をベースラインにする
+	cp eval/reports/latest.json eval/baseline.json
+
+eval-compare: ## ベースラインと比べる（悪化があれば失敗）
+	cd app/api && npm run -s eval:compare
 
 hooks: ## コミット前・プッシュ前のフックを有効にする（lefthook）
 	lefthook install

@@ -51,6 +51,21 @@ make guard-check-api
 
 表示されたトレースをLangfuseで開く。`rag.guard.input` と `rag.guard.output` のspanで、`guard.blocked` と `guard.pii.entities` を確認する。検出があったspanはレベルが WARNING になる。
 
+## 評価（M4）
+
+```bash
+# 評価データセット（eval/rag-cases.jsonl）を流して採点する
+make eval
+
+# ベースラインと比べる。悪化した指標があれば失敗する
+make eval-compare
+
+# 良くなったら、今回の結果をベースラインにする
+make eval-baseline
+```
+
+結果は `eval/reports/latest.json` に書かれる。`.env` に Langfuse の鍵があれば、スコアがトレースに付き、データセット `rag-eval` の実験として残る。プロンプトなどを変えたPRでは、`make eval` の結果もコミットする。CIがベースラインとの差分をジョブのサマリーに出す。
+
 ## 依存パッケージを足すとき
 
 `.npmrc` で install スクリプトを止めている。`npm install` の後でCIの `check-install-scripts` が失敗したら、そのパッケージのスクリプトの中身を確かめる。問題がなければ `scripts/check-install-scripts.mjs` の許可リストに足す。
