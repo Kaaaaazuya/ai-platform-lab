@@ -8,7 +8,8 @@ import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 
-if (process.env.OTEL_SDK_DISABLED !== "true") {
+// 二重に読み込まれても SDK を2つ作らない
+if (process.env.OTEL_SDK_DISABLED !== "true" && !(globalThis as { __otelSdk?: NodeSDK }).__otelSdk) {
   process.env.OTEL_SERVICE_NAME ??= "rag-api";
   const base = process.env.OTEL_EXPORTER_OTLP_ENDPOINT ?? "http://127.0.0.1:4318";
 
@@ -30,10 +31,17 @@ if (process.env.OTEL_SDK_DISABLED !== "true") {
     ],
   });
   sdk.start();
+  // --import で読み込まれるので、ほかのモジュールからは globalThis 経由で止める（shutdownTelemetry）
+  (globalThis as { __otelSdk?: NodeSDK }).__otelSdk = sdk;
 
   const shutdown = () => {
     sdk.shutdown().finally(() => process.exit(0));
   };
   process.on("SIGTERM", shutdown);
   process.on("SIGINT", shutdown);
+}
+
+/** 送信待ちのspanとメトリクスを送り切ってから止める。SDKを読み込んでいなければ何もしない */
+export async function shutdownTelemetry(): Promise<void> {
+  await (globalThis as { __otelSdk?: NodeSDK }).__otelSdk?.shutdown();
 }

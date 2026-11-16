@@ -146,3 +146,26 @@ export function compare(base: Summary, cur: Summary): Comparison {
   ].join("\n");
   return { regressions, markdown };
 }
+
+/** 2つのレポートが同じケースを1回ずつ含んでいるかを確かめる。問題があれば理由を返す */
+export function coverageProblem(base: Report, cur: Report): string | null {
+  const ids = (r: Report) => r.results.map((x) => x.id);
+  for (const [name, r] of [
+    ["ベースライン", base],
+    ["今回", cur],
+  ] as const) {
+    const list = ids(r);
+    if (new Set(list).size !== list.length) return `${name}のレポートに同じケースが重複しています`;
+  }
+  const b = new Set(ids(base));
+  const c = new Set(ids(cur));
+  const missing = [...b].filter((id) => !c.has(id));
+  const extra = [...c].filter((id) => !b.has(id));
+  if (missing.length || extra.length) {
+    const parts = [];
+    if (missing.length) parts.push(`今回にないケース：${missing.join("、")}`);
+    if (extra.length) parts.push(`ベースラインにないケース：${extra.join("、")}`);
+    return `ケースの範囲が違うので比べられません（${parts.join("。")}）。--limit を付けずに実行し直すか、ベースラインを作り直してください`;
+  }
+  return null;
+}
