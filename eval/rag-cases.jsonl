@@ -1,0 +1,15 @@
+{"id":"trace-span","question":"トレースとスパンの違いは何ですか？","reference":"トレースは1つのリクエストがシステムを通る経路全体を表し、複数のスパンで構成される。スパンは個々の処理単位で、名前・開始と終了の時刻・属性・イベント・ステータスなどを持つ。","sources":["opentelemetry/signals/traces.md"]}
+{"id":"span-kind","question":"スパンの種類（Span Kind）にはどんなものがありますか？","reference":"Client、Server、Internal、Producer、Consumer の5種類がある。","sources":["opentelemetry/signals/traces.md"]}
+{"id":"span-event-vs-attr","question":"スパンイベントとスパン属性はどう使い分けますか？","reference":"特定の時点に意味がある出来事（例：ページが操作可能になった時刻）はスパンイベントにする。時刻が重要でない付随情報はスパン属性にする。","sources":["opentelemetry/signals/traces.md"]}
+{"id":"span-status","question":"スパンのステータスにはどんな値がありますか？","reference":"Unset、Error、Ok の3つ。既定は Unset で、エラーが起きたら Error、明示的に成功とする場合に Ok を使う。","sources":["opentelemetry/signals/traces.md"]}
+{"id":"context-propagation","question":"コンテキスト伝播とは何ですか？","reference":"サービスやプロセスの境界を越えてコンテキスト（トレースIDやスパンIDなど）を受け渡す仕組みで、分散トレーシングを可能にする。コンテキストと、それを運ぶ伝播（プロパゲーター）の2つの概念からなる。","sources":["opentelemetry/context-propagation/index.md"]}
+{"id":"baggage","question":"Baggageは何に使いますか？","reference":"シグナル間で受け渡す文脈情報で、サービスをまたいで任意のキーと値を伝播し、トレース・メトリクス・ログに付けられる。機密情報を入れると外部に漏れるおそれがある。","sources":["opentelemetry/signals/baggage.md"]}
+{"id":"sampling-why","question":"なぜトレースをサンプリングするのですか？","reference":"成功して問題のないリクエストがほとんどなら、全トレースを残さなくても代表的なサンプルで十分に観測できる。サンプリングは可視性を失わずに観測コストを下げる有効な方法。","sources":["opentelemetry/sampling/index.md"]}
+{"id":"sampling-head-tail","question":"ヘッドサンプリングとテイルサンプリングの違いは？","reference":"ヘッドサンプリングはトレースの開始時点でサンプリングするかを決め、効率的だがトレース全体を見て判断できない。テイルサンプリングはトレースの全スパンがそろってから判断するため、エラーや遅いトレースを選べるが、実装と運用が難しくコストもかかる。","sources":["opentelemetry/sampling/index.md"]}
+{"id":"resource","question":"OpenTelemetryのリソースとは何ですか？","reference":"テレメトリーを生成したエンティティを属性で表したもの（例：サービス名、ホスト、コンテナ）。TracerProviderやMeterProviderの作成時に付け、後から変えられない。","sources":["opentelemetry/resources/index.md"]}
+{"id":"zero-code","question":"ゼロコード計装とは何ですか？","reference":"アプリケーションのソースコードを編集せずに観測を加える方法。エージェントなどで、使っているライブラリやフレームワークの呼び出しを自動で計装する。","sources":["opentelemetry/instrumentation/zero-code/index.md"]}
+{"id":"collector","question":"OpenTelemetry Collectorの役割は？","reference":"テレメトリーデータを受信・処理・エクスポートする、ベンダーに依存しないプロキシ。複数の形式を受け取り、一つ以上のバックエンドに送れる。","sources":["opentelemetry/components.md"]}
+{"id":"semconv","question":"セマンティック規約（Semantic Conventions）は何のためにありますか？","reference":"操作やデータに共通の名前を付けるための規約で、コードベース、ライブラリ、プラットフォームの間で命名をそろえられる。トレース、メトリクス、ログ、リソースなどに対して定義されている。","sources":["opentelemetry/semantic-conventions.md"]}
+{"id":"logs","question":"OpenTelemetryではログをどう扱いますか？","reference":"Logs APIとSDKでログレコードを生成し、既存のロギングライブラリとはブリッジで連携する。ログはトレースのコンテキストと関連付けられる。","sources":["opentelemetry/signals/logs.md"]}
+{"id":"instrumentation-scope","question":"インストルメンテーションスコープとは何ですか？","reference":"テレメトリーを生成したコードの論理的な単位（ライブラリやモジュールなど）を表す。名前、バージョン、スキーマURL、属性の組で識別され、名前は必須。","sources":["opentelemetry/instrumentation-scope/index.md"]}
+{"id":"distribution","question":"OpenTelemetryのディストリビューションとは何ですか？","reference":"フォークではなく、OpenTelemetryのコンポーネントをカスタマイズした版。上流のコンポーネントに独自の機能や設定を加えたもの。","sources":["opentelemetry/distributions.md"]}

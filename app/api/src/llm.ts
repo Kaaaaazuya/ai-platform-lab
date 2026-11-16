@@ -51,3 +51,24 @@ export async function chatStream(
   }
   return full;
 }
+
+/** ストリーミングせずに1回で返す。json=true なら JSON で返すよう指定する（評価の判定役で使う） */
+export async function chatComplete(
+  messages: ChatMessage[],
+  opts: { model?: string; json?: boolean; sessionId?: string } = {},
+): Promise<string> {
+  const res = await fetch(`${config.gatewayUrl}/chat/completions`, {
+    method: "POST",
+    headers: headers(opts.sessionId),
+    body: JSON.stringify({
+      model: opts.model ?? config.chatModel,
+      messages,
+      stream: false,
+      temperature: 0,
+      ...(opts.json ? { response_format: { type: "json_object" } } : {}),
+    }),
+  });
+  if (!res.ok) throw new Error(`chat failed: ${res.status} ${await res.text()}`);
+  const body = (await res.json()) as { choices: { message: { content: string } }[] };
+  return body.choices[0]?.message.content ?? "";
+}

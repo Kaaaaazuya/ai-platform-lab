@@ -31,6 +31,12 @@ export const config = {
     .filter(Boolean),
   guardTimeoutMs: positiveNumber(process.env.GUARD_TIMEOUT_MS, 2000),
 
+  // 評価（ADR-008）。判定役のモデルと、スコアを記録する Langfuse
+  judgeModel: env("JUDGE_MODEL", env("CHAT_MODEL", "qwen2.5:7b")),
+  langfuseHost: env("LANGFUSE_HOST", "http://127.0.0.1:3000"),
+  langfusePublicKey: env("LANGFUSE_PUBLIC_KEY", ""),
+  langfuseSecretKey: env("LANGFUSE_SECRET_KEY", ""),
+
   port: Number(env("PORT", "8787")),
   corsOrigin: env("CORS_ORIGIN", "http://localhost:5173"),
 };
