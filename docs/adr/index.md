@@ -16,6 +16,7 @@
 | [010](0010-sandbox.md) | アプリ実行サンドボックス | Proposed | K8s＋gVisorの方向。ローカルK8sと載せ方は未定 |
 | [011](0011-chat-streaming.md) | チャットの応答方式 | Accepted | API Gateway REST（ストリーミング）＋Lambda |
 | [012](0012-software-factory.md) | エージェントによる実装ライン | Proposed | 流れは合意済み。仕様の置き場所と動かし方は未定 |
+| [013](0013-dev-quality-supply-chain.md) | 開発時の品質チェックとサプライチェーン対策 | Accepted | Biome・gitleaks・lefthook。npm は ignore-scripts と npm ci、Actions はSHA固定 |
 
 ## 書き方
 

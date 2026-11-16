@@ -14,7 +14,9 @@ export function loadCases(path = resolve(import.meta.dirname, "../../../eval/gua
     .map((l) => JSON.parse(l) as GuardCase);
 }
 
-export async function judge(c: GuardCase): Promise<{ ok: boolean; actual: string; entities: string[]; masked: string }> {
+export async function judge(
+  c: GuardCase,
+): Promise<{ ok: boolean; actual: string; entities: string[]; masked: string }> {
   const g = await guardInput(c.input);
   const entities = [...new Set(g.pii.findings.map((f) => f.entity))].sort();
   const actual = g.blocked ? "block" : entities.length > 0 ? "mask" : "pass";
@@ -28,7 +30,10 @@ async function viaApi(url: string, c: GuardCase): Promise<string> {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ sessionId: `guard-check-${Date.now()}`, message: c.input }),
   });
-  const lines = (await res.text()).split("\n").filter(Boolean).map((l) => JSON.parse(l));
+  const lines = (await res.text())
+    .split("\n")
+    .filter(Boolean)
+    .map((l) => JSON.parse(l));
   const traceId = lines.find((e) => e.type === "meta")?.traceId ?? "-";
   const guard = lines.filter((e) => e.type === "guard").map((e) => `${e.stage}:${e.action}`);
   return `${traceId} ${guard.join(" ") || "(no guard event)"}`;
@@ -41,7 +46,9 @@ async function main() {
     const r = await judge(c);
     if (!r.ok) failed++;
     const extra = api ? await viaApi(api, c) : r.masked;
-    console.log(`${r.ok ? "OK  " : "FAIL"} ${c.id.padEnd(20)} expect=${c.expect} actual=${r.actual} [${r.entities.join(",")}] ${extra}`);
+    console.log(
+      `${r.ok ? "OK  " : "FAIL"} ${c.id.padEnd(20)} expect=${c.expect} actual=${r.actual} [${r.entities.join(",")}] ${extra}`,
+    );
   }
   console.log(failed === 0 ? "all passed" : `${failed} failed`);
   process.exitCode = failed === 0 ? 0 : 1;

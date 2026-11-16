@@ -63,3 +63,4 @@ nav:
       - "010 アプリ実行サンドボックス": adr/0010-sandbox.md
       - "011 チャットの応答方式": adr/0011-chat-streaming.md
       - "012 実装ライン": adr/0012-software-factory.md
+      - "013 品質チェックとサプライチェーン": adr/0013-dev-quality-supply-chain.md

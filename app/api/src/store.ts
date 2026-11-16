@@ -17,17 +17,10 @@ export async function loadHistory(sessionId: string): Promise<ChatMessage[]> {
       Limit: config.historyTurns * 2,
     }),
   );
-  return (out.Items ?? [])
-    .reverse()
-    .map((i) => ({ role: i.role as ChatMessage["role"], content: String(i.content) }));
+  return (out.Items ?? []).reverse().map((i) => ({ role: i.role as ChatMessage["role"], content: String(i.content) }));
 }
 
-export async function appendTurn(
-  sessionId: string,
-  question: string,
-  answer: string,
-  traceId?: string,
-): Promise<void> {
+export async function appendTurn(sessionId: string, question: string, answer: string, traceId?: string): Promise<void> {
   const now = Date.now();
   const put = (offset: number, role: string, content: string) =>
     doc.send(

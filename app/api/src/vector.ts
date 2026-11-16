@@ -32,10 +32,12 @@ export async function replaceSource(
     await client.query("BEGIN");
     await client.query("DELETE FROM chunks WHERE source = $1", [source]);
     for (const r of rows) {
-      await client.query(
-        "INSERT INTO chunks (source, heading, content, embedding) VALUES ($1, $2, $3, $4)",
-        [source, r.heading, r.content, toVector(r.embedding)],
-      );
+      await client.query("INSERT INTO chunks (source, heading, content, embedding) VALUES ($1, $2, $3, $4)", [
+        source,
+        r.heading,
+        r.content,
+        toVector(r.embedding),
+      ]);
     }
     await client.query("COMMIT");
   } catch (e) {

@@ -21,6 +21,7 @@
 ## クイックスタート
 
 ```bash
+make hooks   # lefthook（要 brew install lefthook gitleaks ほか）
 make env models up tf-apply docs ingest
 make api   # 別ターミナル
 make web   # 別ターミナル → http://localhost:5173

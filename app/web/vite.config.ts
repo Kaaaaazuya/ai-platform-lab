@@ -1,5 +1,5 @@
-import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
 // 本番は S3＋CloudFront に dist/ を置く静的SPA（ADR-011）
 export default defineConfig({

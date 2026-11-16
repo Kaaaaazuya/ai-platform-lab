@@ -30,7 +30,7 @@ async function main() {
     for (let i = 0; i < chunks.length; i += BATCH) {
       const batch = chunks.slice(i, i + BATCH);
       const vectors = await embed(batch.map((c) => `${c.heading}\n${c.content}`));
-      batch.forEach((c, j) => rows.push({ ...c, embedding: vectors[j] }));
+      for (const [j, c] of batch.entries()) rows.push({ ...c, embedding: vectors[j] });
     }
     await replaceSource(source, rows);
     files += 1;

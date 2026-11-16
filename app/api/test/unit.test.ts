@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { SseParser, deltaFromChunk } from "../src/sse.js";
+import { parseRequest } from "../src/chat.js";
 import { chunkMarkdown, stripFrontMatter } from "../src/chunk.js";
 import { buildMessages } from "../src/prompt.js";
-import { parseRequest } from "../src/chat.js";
+import { deltaFromChunk, SseParser } from "../src/sse.js";
 
 describe("SseParser", () => {
   it("分割されて届いたイベントを組み立てる", () => {
     const p = new SseParser();
     expect(p.push('data: {"a"')).toEqual([]);
-    expect(p.push(':1}\n\ndata: [DONE]\n\n')).toEqual(['{"a":1}', "[DONE]"]);
+    expect(p.push(":1}\n\ndata: [DONE]\n\n")).toEqual(['{"a":1}', "[DONE]"]);
   });
 
   it("CRLF とコメント行を扱える", () => {
