@@ -137,7 +137,9 @@ M3までは型チェックとテスト、`terraform fmt` しかなく、リン�
 
 ### 影響
 
-- SHAで固定した Actions には、GitHub が脆弱性の通知（Dependabot alerts）を出さない。そのため Actions のセキュリティ修正は、すぐには届かず、月1回の更新で届く
+- 頻度に関係なくすぐ届くセキュリティ修正（Dependabot security updates）は、npm と pip だけだ。ほかは月1回の更新で届く
+    - Docker、compose、Terraform は、GitHub がセキュリティ修正のPRに対応していない
+    - Actions は、SHAで固定しているので、GitHub が脆弱性の通知（Dependabot alerts）を出さない
 - 変数でタグを上書きする使い方はなくなる。別の版を試したいときは、compose.yaml を書き換えるか、`compose.override.yaml` を使う
 - ClickHouse と Redis の更新は、Langfuse を上げるときに、Langfuse が出している compose の版と見比べて上げる
 
