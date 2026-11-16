@@ -55,7 +55,7 @@ ingest: ## ドキュメントを埋め込んで pgvector に入れる
 	cd app/api && npm run ingest -- ../../data/docs
 
 api: ## アプリAPIを起動（:8787）
-	source scripts/emulator-env.sh && cd app/api && npm run dev
+	set -a; [ -f .env ] && source ./.env; set +a; source scripts/emulator-env.sh && cd app/api && npm run dev
 
 web: ## チャット画面を起動（:5173）
 	cd app/web && npm run dev
