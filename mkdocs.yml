@@ -49,6 +49,21 @@ plugins:
 nav:
   - デザインドック: index.md
   - セットアップ: setup.md
+  - コンポーネント解説:
+      - components/index.md
+      - アプリAPIとチャット画面: components/app.md
+      - ガードレール: components/guardrail.md
+      - pgvector: components/pgvector.md
+      - AIゲートウェイ: components/ai-gateway.md
+      - Ollama: components/ollama.md
+      - AWS Emulator: components/aws-emulator.md
+      - OTel Collector: components/otel-collector.md
+      - Langfuse: components/langfuse.md
+      - Grafana: components/grafana.md
+      - 評価ランナー: components/evaluation.md
+      - Terraform: components/terraform.md
+      - 品質チェックとサプライチェーン: components/quality.md
+      - サンドボックス（予定）: components/sandbox.md
   - 文章ガイド: writing-guide.md
   - 用語集: glossary.md
   - ADR:
