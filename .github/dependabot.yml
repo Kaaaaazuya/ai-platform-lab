@@ -62,8 +62,10 @@ updates:
     cooldown:
       default-days: 7
     groups:
-      terraform:
-        patterns: ["*"]
+      terraform-minor:
+        update-types: [minor, patch]
+      terraform-major:
+        update-types: [major]
 
   # ドキュメントのビルドに使う MkDocs など
   - package-ecosystem: pip
@@ -73,5 +75,7 @@ updates:
     cooldown:
       default-days: 7
     groups:
-      docs-python:
-        patterns: ["*"]
+      docs-python-minor:
+        update-types: [minor, patch]
+      docs-python-major:
+        update-types: [major]
