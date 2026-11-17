@@ -146,3 +146,19 @@ M3までは型チェックとテスト、`terraform fmt` しかなく、リン�
 - Langfuse もパッチ版（`4.81.0` など）までタグに書く。`:4` のままだと、Dependabot はそれより細かい版を出さない。パッチ版の更新もPRで届き、ほかの依存と同じく自動でマージされる
 - パッチの自動マージは `.github/workflows/dependabot-auto-merge.yml` で行う。ci が成功で終わったあとに動き、グループ名が `*-patch` のPRだけをマージする。PRのコードは取り出さず、CI の後にコミットが増えていればマージしない
 
+## CodeRabbit とmainの保護（2026-11-17 追加）
+
+### 見えた問題
+
+- CodeRabbit はプッシュのたびにレビューし、1時間に10回の枠をすぐ使い切っていた。枠を超えると、使った分だけ払うレビューに切り替わる
+- このリポジトリは公開しているので、CodeRabbit は無料で使える。ただし、使った分だけ払うレビューは、設定で止めない限り有効になる
+- main を保護していないので、CI を通さずにマージや直接のプッシュができる
+
+### 決めたこと
+
+- CodeRabbit は、PRを開いたときだけレビューする。後のプッシュは、必要なときに「@coderabbitai review」で頼む
+- Dependabot のPRは、CodeRabbit の対象から外す。CI で確かめ、パッチは自動でマージする
+- `package-lock.json` と評価の結果（`eval/reports/`）は、CodeRabbit に見せない
+- 使った分だけ払うレビューは、CodeRabbit の画面で止める（Subscription and Billing の Usage-based add-on を Off にする）
+- main は、PRを通すことと CI が通ることを必須にする。承認は求めない（一人で開発しているため。パッチの自動マージも、承認なしで動く）。強制プッシュと削除は禁止する
+
