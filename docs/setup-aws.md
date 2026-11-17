@@ -68,7 +68,11 @@ terraform apply
 - IAM の画面に `ai-platform-lab-gha-plan` と `ai-platform-lab-gha-apply` がある
 - Bedrock の画面で、東京の Guardrails が開ける
 
-Bedrock のモデルは、今は最初から使える。昔の「モデルアクセス」の画面は2025年10月になくなった。Anthropic のモデルだけは、初回に用途を書くフォームを求められる場合がある。
+Bedrock のモデルは、今は最初から使える。昔の「モデルアクセス」の画面は2025年10月になくなった。
+
+- スモークテストには Amazon のモデル（Nova）を使う。Marketplace を通らないので、`gha-apply` のままで呼べる
+- 他社のモデルは、初めて呼んだときに Marketplace の購読が始まる。`gha-apply` には購読の権限がないので、使うなら管理者で一度呼んでおく
+- Anthropic のモデルは、さらに初回に用途のフォームを出す
 
 ## 権限の考え方
 
@@ -78,7 +82,8 @@ Bedrock のモデルは、今は最初から使える。昔の「モデルアク
 | `gha-apply` | `aws-apply` | state の読み書き、東京の Guardrails の作成と削除、モデルと Guardrails の呼び出し、タグの検索 |
 | `budgets-action` | AWS Budgets | 上の2つに、Bedrock を拒否するポリシーを付け外しするだけ |
 
-- 予算アクションで付いた拒否のポリシーは、自動では外れない。原因を確かめてから、Budgets の画面でアクションを戻す
+- 月の途中で拒否のポリシーが付いたら、原因を確かめてから Budgets の画面でアクションを戻す
+- IAM ポリシーのアクションは、月が替わるとリセットされる。実際にポリシーが外れるかは M5 で確かめる
 - IAM のロールを作る権限は、まだ `gha-apply` に入れていない。M5で必要になったら、権限の境界（permissions boundary）つきで足す
 
 ## やめるとき
