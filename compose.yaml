@@ -139,7 +139,7 @@ services:
     image: otel/opentelemetry-collector-contrib:0.165.0
     command: ["--config=/etc/otelcol/config.yaml"]
     environment:
-      LANGFUSE_AUTH: ${LANGFUSE_AUTH:?run `task env` first}
+      LANGFUSE_AUTH: ${LANGFUSE_AUTH:?run `task env` first. task env does not change an existing .env, so add LANGFUSE_AUTH=base64(public:secret) to it (see .env.example)}
     volumes:
       - ./infra/otel/collector.yaml:/etc/otelcol/config.yaml:ro
     ports:

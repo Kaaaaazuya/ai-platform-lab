@@ -7,6 +7,8 @@ vars:
   TF_DIR: terraform/envs/local
   # エミュレーターに向けるための環境変数を読む
   EMULATOR_ENV: source scripts/emulator-env.sh
+  # .env を読む。シェルにある同じ名前の変数より .env を優先し、書き方が壊れていれば止まる
+  LOAD_ENV: if [ -f .env ]; then set -a; . ./.env; set +a; fi
 
 tasks:
   default:
@@ -89,10 +91,8 @@ tasks:
 
   api:
     desc: アプリAPIを起動する（:8787）
-    # .env の書き方が壊れていれば、ここで止まる
-    dotenv: [.env]
     cmds:
-      - "{{.EMULATOR_ENV}} && cd app/api && npm run dev"
+      - "{{.LOAD_ENV}}; {{.EMULATOR_ENV}} && cd app/api && npm run dev"
 
   web:
     desc: チャット画面を起動する（:5173）
@@ -114,9 +114,8 @@ tasks:
 
   eval:
     desc: RAGの評価を実行して eval/reports/latest.json に書く（up・tf-apply・ingest の後）
-    dotenv: [.env]
     cmds:
-      - "{{.EMULATOR_ENV}} && cd app/api && npm run eval"
+      - "{{.LOAD_ENV}}; {{.EMULATOR_ENV}} && cd app/api && npm run eval"
 
   eval-baseline:
     desc: 今回の評価結果をベースラインにする
