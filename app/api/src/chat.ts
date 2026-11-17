@@ -142,11 +142,21 @@ export async function runChat(req: ChatRequest, emit: (e: ChatEvent) => void, ho
   });
 }
 
+// sessionId は DynamoDB のキーと HTTP ヘッダー（x-session-id）に使う。
+// 改行や非ASCII文字を含む値は、ヘッダーに入れたときに例外になるので受け付けない
+export const SESSION_ID_PATTERN = /^[A-Za-z0-9_-]{1,100}$/;
+
 export function parseRequest(body: unknown): ChatRequest {
   const b = body as Partial<ChatRequest> | null;
   if (!b || typeof b.message !== "string" || !b.message.trim()) {
     throw new Error("message is required");
   }
-  const sessionId = typeof b.sessionId === "string" && b.sessionId ? b.sessionId : crypto.randomUUID();
+  // 無い（undefined・null・空文字）ときだけ作る。それ以外は 0 や false も含めて形式を確かめる
+  const given: unknown = b.sessionId;
+  const missing = given === undefined || given === null || given === "";
+  if (!missing && (typeof given !== "string" || !SESSION_ID_PATTERN.test(given))) {
+    throw new Error("sessionId is invalid");
+  }
+  const sessionId = missing ? crypto.randomUUID() : (given as string);
   return { sessionId, message: b.message.trim().slice(0, 4000) };
 }
