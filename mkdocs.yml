@@ -49,6 +49,7 @@ plugins:
 nav:
   - デザインドック: index.md
   - セットアップ: setup.md
+  - 実AWSの準備: setup-aws.md
   - コンポーネント解説:
       - components/index.md
       - アプリAPIとチャット画面: components/app.md

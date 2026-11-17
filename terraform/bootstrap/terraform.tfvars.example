@@ -1,0 +1,2 @@
+# terraform.tfvars にコピーして使う（terraform.tfvars はコミットしない）
+alert_email = "you@example.com"
