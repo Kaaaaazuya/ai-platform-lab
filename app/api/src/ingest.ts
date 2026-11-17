@@ -3,9 +3,10 @@
 //   npm run ingest -w app/api -- ../../data/docs
 import { readdir, readFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
-import { chunkMarkdown } from "./chunk.js";
+import { chunkMarkdown, validateChunkOptions } from "./chunk.js";
+import { config } from "./config.js";
 import { embed } from "./llm.js";
-import { closeDb, ensureSchema, replaceSource } from "./vector.js";
+import { clearIndexMeta, closeDb, deleteOtherSources, ensureSchema, replaceSource, writeIndexMeta } from "./vector.js";
 
 const BATCH = 16;
 
@@ -19,12 +20,16 @@ async function* walk(dir: string): AsyncGenerator<string> {
 
 async function main() {
   const root = resolve(process.argv[2] ?? "../../data/docs");
+  // 設定の誤りは、DB に触る前に止める
+  validateChunkOptions(config.chunkMaxChars, config.chunkOverlap);
   await ensureSchema();
+  await clearIndexMeta();
+  const kept: string[] = [];
   let files = 0;
   let total = 0;
   for await (const file of walk(root)) {
     const source = relative(root, file);
-    const chunks = chunkMarkdown(await readFile(file, "utf8"));
+    const chunks = chunkMarkdown(await readFile(file, "utf8"), config.chunkMaxChars, config.chunkOverlap);
     if (chunks.length === 0) continue;
     const rows: { heading: string; content: string; embedding: number[] }[] = [];
     for (let i = 0; i < chunks.length; i += BATCH) {
@@ -33,10 +38,21 @@ async function main() {
       for (const [j, c] of batch.entries()) rows.push({ ...c, embedding: vectors[j] });
     }
     await replaceSource(source, rows);
+    kept.push(source);
     files += 1;
     total += rows.length;
     console.log(`${source}: ${rows.length} chunks`);
   }
+  // 取り込むものが1件もなければ、場所の指定違いとみなして何も消さない
+  if (kept.length === 0) throw new Error(`no documents to ingest under ${root}`);
+  // 今回なかったソース（消えたファイル、チャンクが0件のファイル）の古いチャンクを消す
+  const removed = await deleteOtherSources(kept);
+  if (removed > 0) console.log(`removed ${removed} chunks of sources not in this run`);
+  await writeIndexMeta({
+    embedModel: config.embedModel,
+    chunkMaxChars: config.chunkMaxChars,
+    chunkOverlap: config.chunkOverlap,
+  });
   console.log(`done: ${files} files, ${total} chunks`);
   await closeDb();
 }

@@ -26,13 +26,67 @@ export type Summary = {
   latencyP50Ms: number;
 };
 
+// 評価の条件。レポートだけを見て同じ条件を作り直せるように残す（Issue #33）
+export type Conditions = {
+  prompt: { name: string; version: string; sha256: string };
+  chatModel: string;
+  judgeModel: string;
+  embedModel: string;
+  topK: number;
+  // 取り込み時の条件。取り込みがこの仕組みより前なら null
+  index: { embedModel: string; chunkMaxChars: number; chunkOverlap: number; ingestedAt: string } | null;
+  // infra/aigw/config.yaml の sha256。ファイルがなければ null
+  gatewayConfigSha256: string | null;
+};
+
 export type Report = {
   createdAt: string;
   chatModel: string;
   judgeModel: string;
+  conditions?: Conditions; // 古いレポートにはない
   summary: Summary;
   results: CaseResult[];
 };
+
+/** 条件を「項目 → 値」の平らな形にする。取り込み日時は条件ではないので除く */
+function flattenConditions(c: Conditions): Record<string, string> {
+  const show = (v: unknown) => (v === null || v === undefined ? "（なし）" : String(v));
+  return {
+    プロンプト: `${c.prompt.name}/${c.prompt.version}`,
+    "プロンプトの中身（sha256）": c.prompt.sha256.slice(0, 12),
+    チャットのモデル: c.chatModel,
+    判定役のモデル: c.judgeModel,
+    埋め込みのモデル: c.embedModel,
+    topK: show(c.topK),
+    取り込み時の埋め込みモデル: show(c.index?.embedModel),
+    チャンクの最大文字数: show(c.index?.chunkMaxChars),
+    チャンクの重なり: show(c.index?.chunkOverlap),
+    "ゲートウェイ設定（sha256）": c.gatewayConfigSha256?.slice(0, 12) ?? "（なし）",
+  };
+}
+
+/** ベースラインと今回で、評価の条件が違う項目を表にする。ベースラインの更新時に見る */
+export function diffConditions(base?: Conditions, cur?: Conditions): string {
+  if (!base || !cur) return "どちらかのレポートに条件の記録がないので、比べられません。";
+  const b = flattenConditions(base);
+  const c = flattenConditions(cur);
+  const rows = Object.keys(c)
+    .filter((k) => b[k] !== c[k])
+    .map((k) => `| ${k} | ${b[k]} | ${c[k]} |`);
+  if (rows.length === 0) return "条件は同じです。";
+  return ["| 条件 | ベースライン | 今回 |", "| --- | --- | --- |", ...rows].join("\n");
+}
+
+/** 取り込み時と今の設定が食い違っていれば、理由を返す */
+export function indexMismatch(c: Conditions): string | null {
+  if (!c.index) {
+    return "取り込みの条件が記録されていません（途中で失敗したか、古い取り込み）。`task ingest` をやり直してください";
+  }
+  if (c.index.embedModel !== c.embedModel) {
+    return `取り込み時の埋め込みモデル（${c.index.embedModel}）と今の設定（${c.embedModel}）が違います`;
+  }
+  return null;
+}
 
 export function loadRagCases(path: string): RagCase[] {
   return readFileSync(path, "utf8")

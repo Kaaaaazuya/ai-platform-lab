@@ -118,8 +118,10 @@ tasks:
       - "{{.LOAD_ENV}}; {{.EMULATOR_ENV}} && cd app/api && npm run eval"
 
   eval-baseline:
-    desc: 今回の評価結果をベースラインにする
+    desc: 今回の評価結果をベースラインにする（先に、ベースラインとの差と条件の違いを出す）
     cmds:
+      - cmd: cd app/api && npm run eval:compare
+        ignore_error: true
       - cp eval/reports/latest.json eval/baseline.json
 
   eval-compare:

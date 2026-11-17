@@ -3,18 +3,21 @@
 //   npm run eval                  … 全ケース
 //   npm run eval -- --limit 3     … 先頭3件だけ（動作確認用）
 // Langfuse の鍵があれば、スコアをトレースに付け、データセットの実験として記録する。
-import { mkdirSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { type ChatEvent, runChat } from "../chat.js";
 import { config } from "../config.js";
 import { langfuseEnabled, linkRunItem, postScores, upsertDataset } from "../langfuse.js";
-import type { Retrieved } from "../prompt.js";
+import { chatPrompt, promptRef, type Retrieved } from "../prompt.js";
 import { shutdownTelemetry } from "../telemetry.js";
-import { closeDb } from "../vector.js";
+import { closeDb, readIndexMeta } from "../vector.js";
 import { judge } from "./judge.js";
 import {
   type CaseResult,
+  type Conditions,
   hasCitation,
+  indexMismatch,
   loadRagCases,
   type RagCase,
   type Report,
@@ -29,6 +32,23 @@ const arg = (name: string) => {
   const i = process.argv.indexOf(name);
   return i >= 0 ? process.argv[i + 1] : undefined;
 };
+
+const GATEWAY_CONFIG = resolve(ROOT, "infra/aigw/config.yaml");
+
+/** レポートに残す評価の条件を集める（Issue #33） */
+async function collectConditions(): Promise<Conditions> {
+  return {
+    prompt: promptRef(chatPrompt()),
+    chatModel: config.chatModel,
+    judgeModel: config.judgeModel,
+    embedModel: config.embedModel,
+    topK: config.topK,
+    index: await readIndexMeta(),
+    gatewayConfigSha256: existsSync(GATEWAY_CONFIG)
+      ? createHash("sha256").update(readFileSync(GATEWAY_CONFIG)).digest("hex")
+      : null,
+  };
+}
 
 async function runCase(c: RagCase, runName: string): Promise<CaseResult> {
   const sessionId = `eval-${runName}-${c.id}`;
@@ -85,6 +105,14 @@ async function main() {
     cases.map((c) => ({ id: c.id, input: c.question, expectedOutput: c.reference })),
   ).catch((e) => console.warn(`Langfuse のデータセット登録に失敗: ${(e as Error).message}`));
 
+  const conditions = await collectConditions();
+  // 取り込みが途中で失敗した、または条件の記録より前のインデックスなら、評価しない
+  const mismatch = indexMismatch(conditions);
+  if (mismatch) {
+    await closeDb();
+    throw new Error(`${mismatch}。評価は行いません`);
+  }
+
   const results: CaseResult[] = [];
   for (const c of cases.slice(0, limit)) {
     const r = await runCase(c, runName);
@@ -104,10 +132,20 @@ async function main() {
     }
   }
 
+  // 評価の途中で取り込み直されたら、条件の混ざったレポートになるので保存しない
+  const after = await readIndexMeta();
+  if (JSON.stringify(after) !== JSON.stringify(conditions.index)) {
+    await closeDb();
+    throw new Error(
+      "評価の途中でインデックスが取り込み直されました。レポートは保存しません。もう一度 task eval を流してください",
+    );
+  }
+
   const report: Report = {
     createdAt: new Date().toISOString(),
     chatModel: config.chatModel,
     judgeModel: config.judgeModel,
+    conditions,
     summary: summarize(results),
     results,
   };

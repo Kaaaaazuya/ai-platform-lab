@@ -18,6 +18,11 @@ export const config = {
   // RAG 用の pgvector
   databaseUrl: env("RAG_DATABASE_URL", "postgresql://postgres:postgres@127.0.0.1:5433/rag"),
   topK: Number(env("RAG_TOP_K", "4")),
+  // 取り込み時のチャンク分割。変えたら取り込み直す（評価レポートには取り込み時の値が残る）
+  chunkMaxChars: positiveNumber(process.env.CHUNK_MAX_CHARS, 1200),
+  chunkOverlap: Number(env("CHUNK_OVERLAP", "150")),
+  // チャットのシステムプロンプトの版（app/api/prompts/rag-chat/<版>.md）
+  promptVersion: env("RAG_PROMPT_VERSION", "v1"),
 
   // 会話履歴（AWS Emulator 上の DynamoDB）。接続先は AWS_ENDPOINT_URL などで決まる
   conversationsTable: env("CONVERSATIONS_TABLE", "ai-platform-lab-conversations"),

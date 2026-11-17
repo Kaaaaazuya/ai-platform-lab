@@ -74,11 +74,11 @@ services:
   # ---------- AI Gateway (Envoy AI Gateway / Agent Router) ----------
   aigw:
     image: envoyproxy/ai-gateway-cli:v1.2.1
-    command: ["run"]
+    # 設定はリポジトリの infra/aigw/config.yaml（ルーティングなどを PR で見られるようにする）
+    command: ["run", "/etc/aigw/config.yaml"]
+    volumes:
+      - ./infra/aigw/config.yaml:/etc/aigw/config.yaml:ro
     environment:
-      # 設定ファイルなしで起動すると、OpenAI互換のバックエンド（Ollama）向け設定を自動生成する
-      OPENAI_BASE_URL: http://host.docker.internal:11434/v1
-      OPENAI_API_KEY: unused
       OTEL_SERVICE_NAME: aigw
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc

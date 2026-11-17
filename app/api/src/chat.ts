@@ -1,9 +1,10 @@
 // RAG チャットの本体。Lambda ハンドラーとローカルサーバーの両方から呼ぶ。
 // 出力は NDJSON の行（ChatEvent）として emit に渡す（ADR-011: ストリーミング）。
 import { context, type Span, SpanStatusCode, trace } from "@opentelemetry/api";
+import { config } from "./config.js";
 import { guardInput, guardOutput, type PiiResult } from "./guard.js";
 import { chatStream, embed } from "./llm.js";
-import { buildMessages, type Retrieved } from "./prompt.js";
+import { buildMessages, chatPrompt, type Retrieved } from "./prompt.js";
 import { appendTurn, loadHistory } from "./store.js";
 import { search } from "./vector.js";
 
@@ -56,6 +57,14 @@ export async function runChat(req: ChatRequest, emit: (e: ChatEvent) => void, ho
     emit({ type: "meta", traceId });
 
     try {
+      // 評価やトレースから、どの版のプロンプトと検索条件で答えたかを追えるようにする（Issue #33）
+      const prompt = chatPrompt();
+      root.setAttribute("rag.prompt.name", prompt.name);
+      root.setAttribute("rag.prompt.version", prompt.version);
+      root.setAttribute("rag.prompt.sha256", prompt.sha256);
+      root.setAttribute("rag.top_k", config.topK);
+      root.setAttribute("langfuse.trace.metadata.prompt_version", `${prompt.name}/${prompt.version}`);
+
       // 1. 入力ガード。ここから先（埋め込み・生成・トレース・履歴）はマスク後の文字列だけを使う
       const input = await tracer.startActiveSpan("rag.guard.input", async (span) => {
         try {
@@ -103,7 +112,7 @@ export async function runChat(req: ChatRequest, emit: (e: ChatEvent) => void, ho
       hooks.onRetrieved?.(retrieved);
 
       const raw = await chatStream(
-        buildMessages(question, history, retrieved),
+        buildMessages(question, history, retrieved, prompt),
         (text) => emit({ type: "token", text }),
         req.sessionId,
       );

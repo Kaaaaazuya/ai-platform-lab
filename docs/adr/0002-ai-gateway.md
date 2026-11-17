@@ -64,7 +64,7 @@ Envoy Proxy と Envoy Gateway の上に作られたAIゲートウェイ。Bloomb
 ## 決定の理由
 
 - OpenAI互換の1つのAPIで、OllamaやBedrockなどへ振り分けられる
-- 同じ設定ファイルをスタンドアロンとKubernetesの両方で使える
+- 同じ設定ファイルをスタンドアロンとKubernetesの両方で使える。設定は `infra/aigw/config.yaml` に置き、PRで差分を見る
 - トークン単位のレート制限、プロバイダーのフォールバックがある
 - GenAIメトリクスとOTelトレースを出すので、ADR-004の観測方針と合う
 - Kubernetes Gateway APIに沿っており、ADR-010（K8s＋gVisor）と同じクラスターで学べる

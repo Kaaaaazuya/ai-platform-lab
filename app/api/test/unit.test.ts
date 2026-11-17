@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseRequest } from "../src/chat.js";
 import { chunkMarkdown, stripFrontMatter } from "../src/chunk.js";
-import { buildMessages } from "../src/prompt.js";
+import { buildMessages, loadPrompt } from "../src/prompt.js";
 import { deltaFromChunk, SseParser } from "../src/sse.js";
 
 describe("SseParser", () => {
@@ -68,5 +68,27 @@ describe("parseRequest", () => {
   it("sessionId が無ければ作る", () => {
     const r = parseRequest({ message: "hi" });
     expect(r.sessionId).toMatch(/[0-9a-f-]{36}/);
+  });
+});
+
+describe("chunkMarkdown の引数", () => {
+  it("overlap が maxChars 以上なら、無限ループせずに失敗する", () => {
+    expect(() => chunkMarkdown("# A\nbody", 100, 100)).toThrow();
+    expect(() => chunkMarkdown("# A\nbody", 100, -1)).toThrow();
+    expect(() => chunkMarkdown("# A\nbody", 1200.5, 150)).toThrow();
+  });
+});
+
+describe("loadPrompt", () => {
+  it("版のファイルを読み、中身の sha256 を付ける", () => {
+    const p = loadPrompt("rag-chat", "v1");
+    expect(p).toMatchObject({ name: "rag-chat", version: "v1" });
+    expect(p.sha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(p.text).toContain("参考資料");
+  });
+
+  it("パスを抜け出す名前や版は読まない", () => {
+    expect(() => loadPrompt("rag-chat", "../v1")).toThrow(/invalid/);
+    expect(() => loadPrompt("../x", "v1")).toThrow(/invalid/);
   });
 });
