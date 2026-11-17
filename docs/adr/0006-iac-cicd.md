@@ -5,7 +5,7 @@
 ## 要約
 
 - インフラはTerraformで書き、同じコードをAWS Emulatorと実AWSの両方に流す
-- PRごとにエミュレーターへapplyして確かめる。mainへのマージ後は、承認を挟んで実AWSへapplyする
+- PRごとにエミュレーターへapplyして確かめる。実AWSへは、手動で動かしたときだけ承認を挟んでapplyする（ADR-007）
 - エミュレーターで確かめられないIAMなどは、静的解析と実AWS段で確かめる
 
 ## 背景
@@ -49,7 +49,7 @@ AWS Emulator（[解説](../components/aws-emulator.md)）を使えば、PRごと
 Terraformを採用し、CI/CDの中でAWS Emulatorと実AWSの2段で検証する。パイプラインの図はデザインドックの「検証戦略」にある。
 
 1. **PRごと（AWS Emulator・無料）**：静的チェック → エミュレーター起動 → terraform apply → 統合テストと評価ランナー → エミュレーター停止。静的チェックは fmt、validate、tflint、trivy
-2. **mainマージ後（実AWS・従量課金）**：terraform plan → 手動承認 → apply → スモークテスト → destroy
+2. **手動で動かしたとき（実AWS・従量課金）**：terraform plan → 手動承認 → apply → スモークテスト → destroy。mainへのマージごとには流さない（ADR-007）
 
 ### 構成の決めごと
 
