@@ -36,6 +36,16 @@ resource "aws_s3_bucket" "docs" {
   force_destroy = true
 }
 
+# 原文書は外に公開しない。ACL とバケットポリシーによる公開をすべて止める（Trivy AWS-0086/0087/0091/0093）
+resource "aws_s3_bucket_public_access_block" "docs" {
+  bucket = aws_s3_bucket.docs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
 output "conversations_table" {
   value = aws_dynamodb_table.conversations.name
 }

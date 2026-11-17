@@ -8,7 +8,7 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| モジュール | `terraform/modules/chat-store`（DynamoDB の会話履歴テーブルと S3 バケット） |
+| モジュール | `terraform/modules/chat-store`（DynamoDB の会話履歴テーブルと S3 バケット。バケットは公開アクセスをすべて止める） |
 | 環境 | `terraform/envs/local`（AWS Emulator 向け） |
 | 実行 | `task tf-apply` |
 | CI | fmt、validate、tflint。変数が設定されていればエミュレーターへの apply とスモークテスト |
