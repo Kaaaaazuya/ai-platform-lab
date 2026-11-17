@@ -1,4 +1,4 @@
-# コミット前・プッシュ前のチェック（ADR-013）。`make hooks` で有効にする
+# コミット前・プッシュ前のチェック（ADR-013）。`task hooks` で有効にする
 # 必要なツール: brew install lefthook gitleaks shellcheck actionlint hadolint tflint
 pre-commit:
   parallel: true

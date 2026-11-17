@@ -76,7 +76,7 @@ M3までは型チェックとテスト、`terraform fmt` しかなく、リン�
 
 **受け入れること**
 
-- フックを有効にするには、各自でツールを入れて `make hooks` を実行する
+- フックを有効にするには、各自でツールを入れて `task hooks` を実行する
     - `brew install lefthook gitleaks shellcheck actionlint hadolint tflint`
 - `ignore-scripts=true` のため、ネイティブビルドが必要なパッケージを入れるときは `npm rebuild <pkg>` を明示的に実行する
 - MinIO（`cgr.dev/chainguard/minio`）は無料版が `latest` しか配布していないので固定していない

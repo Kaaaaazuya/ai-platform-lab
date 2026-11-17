@@ -11,7 +11,7 @@ LLMに渡す前の入力と、生成された出力を検査する仕組み。�
 | 検出器 | Presidio Analyzer（コンテナ、:5002）と、アプリ内の日本向けルール |
 | 呼び出し元 | アプリAPI（ゲートウェイではない） |
 | テストケース | `eval/guard-cases.jsonl`（CIで毎回判定） |
-| 確かめ方 | `make guard-check`、`make guard-check-api` |
+| 確かめ方 | `task guard-check`、`task guard-check-api` |
 | 関連ADR | [ADR-005](../adr/0005-guardrails.md) |
 
 ## 仕組み
@@ -60,8 +60,8 @@ Presidio は Python なので、文字の位置を Unicode のコードポイン
 ## 動かして確かめる
 
 ```bash
-make guard-check        # ケースごとの判定とマスク結果を表示する
-make guard-check-api    # アプリAPIに流し、トレースIDを表示する
+task guard-check        # ケースごとの判定とマスク結果を表示する
+task guard-check-api    # アプリAPIに流し、トレースIDを表示する
 ```
 
 ## 学ぶポイント

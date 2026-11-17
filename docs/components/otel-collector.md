@@ -49,7 +49,7 @@ filter/langfuse:
 
 ### Langfuse への認証
 
-Langfuse の OTLP の受け口は、Basic 認証で守られている。公開鍵と秘密鍵を `公開鍵:秘密鍵` の形でつなぎ、Base64 にしたものを `Authorization` ヘッダーに載せる。`make env` がこの値（`LANGFUSE_AUTH`）を作る。
+Langfuse の OTLP の受け口は、Basic 認証で守られている。公開鍵と秘密鍵を `公開鍵:秘密鍵` の形でつなぎ、Base64 にしたものを `Authorization` ヘッダーに載せる。`task env` がこの値（`LANGFUSE_AUTH`）を作る。
 
 ## 学ぶポイント
 

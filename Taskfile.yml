@@ -1,0 +1,158 @@
+# よく使う操作をまとめる（Task: https://taskfile.dev）。`task` だけで一覧を出す
+version: "3"
+
+vars:
+  CHAT_MODEL: '{{.CHAT_MODEL | default "qwen2.5:7b"}}'
+  EMBED_MODEL: '{{.EMBED_MODEL | default "bge-m3"}}'
+  TF_DIR: terraform/envs/local
+  # エミュレーターに向けるための環境変数を読む
+  EMULATOR_ENV: source scripts/emulator-env.sh
+
+tasks:
+  default:
+    desc: タスクの一覧
+    silent: true
+    cmds:
+      - task --list
+
+  env:
+    desc: .env を生成する（既にあれば何もしない）
+    silent: true
+    status:
+      - test -f .env
+    cmds:
+      - |
+        pk="pk-lf-$(openssl rand -hex 8)"
+        sk="sk-lf-$(openssl rand -hex 16)"
+        {
+          echo "LANGFUSE_PUBLIC_KEY=$pk"
+          echo "LANGFUSE_SECRET_KEY=$sk"
+          echo "LANGFUSE_AUTH=$(printf '%s:%s' "$pk" "$sk" | base64 | tr -d '\n')"
+          echo "LANGFUSE_NEXTAUTH_SECRET=$(openssl rand -hex 32)"
+          echo "LANGFUSE_SALT=$(openssl rand -hex 16)"
+          echo "LANGFUSE_ENCRYPTION_KEY=$(openssl rand -hex 32)"
+          echo "LANGFUSE_USER_PASSWORD=$(openssl rand -hex 8)"
+          if [ "$(uname -m)" = arm64 ]; then echo "EMULATOR_ARCH=aarch64"; else echo "EMULATOR_ARCH=x86_64"; fi
+        } > .env
+        echo "wrote .env (Langfuse login: admin@example.com / see LANGFUSE_USER_PASSWORD)"
+
+  models:
+    desc: Ollama にモデルを取得する
+    cmds:
+      - ollama pull {{.CHAT_MODEL}}
+      - ollama pull {{.EMBED_MODEL}}
+
+  up:
+    desc: Docker Compose で基盤を起動する
+    cmds:
+      - docker compose up -d --build
+      - task: emulator-wait
+
+  down:
+    desc: 停止する（エミュレーターの状態は消える）
+    cmds:
+      - docker compose down
+
+  logs:
+    desc: ログを追う
+    cmds:
+      - docker compose logs -f --tail=100
+
+  emulator-wait:
+    cmds:
+      - ./scripts/wait-emulator.sh
+
+  tf-init:
+    cmds:
+      - "{{.EMULATOR_ENV}} && terraform -chdir={{.TF_DIR}} init -input=false"
+
+  tf-apply:
+    desc: Terraform でエミュレーターに構築する
+    cmds:
+      - task: tf-init
+      - "{{.EMULATOR_ENV}} && terraform -chdir={{.TF_DIR}} apply -auto-approve -input=false"
+
+  tf-destroy:
+    cmds:
+      - "{{.EMULATOR_ENV}} && terraform -chdir={{.TF_DIR}} destroy -auto-approve -input=false"
+
+  docs:
+    desc: 題材ドキュメントを取得する
+    cmds:
+      - ./scripts/fetch-docs.sh
+
+  ingest:
+    desc: ドキュメントを埋め込んで pgvector に入れる
+    dir: app/api
+    cmds:
+      - npm run ingest -- ../../data/docs
+
+  api:
+    desc: アプリAPIを起動する（:8787）
+    # .env の書き方が壊れていれば、ここで止まる
+    dotenv: [.env]
+    cmds:
+      - "{{.EMULATOR_ENV}} && cd app/api && npm run dev"
+
+  web:
+    desc: チャット画面を起動する（:5173）
+    dir: app/web
+    cmds:
+      - npm run dev
+
+  guard-check:
+    desc: ガードレールのケース（eval/guard-cases.jsonl）を判定する
+    dir: app/api
+    cmds:
+      - npm run guard:check
+
+  guard-check-api:
+    desc: 同じケースをアプリAPIに流してトレースを作る
+    dir: app/api
+    cmds:
+      - npm run guard:check -- --api http://127.0.0.1:8787/chat
+
+  eval:
+    desc: RAGの評価を実行して eval/reports/latest.json に書く（up・tf-apply・ingest の後）
+    dotenv: [.env]
+    cmds:
+      - "{{.EMULATOR_ENV}} && cd app/api && npm run eval"
+
+  eval-baseline:
+    desc: 今回の評価結果をベースラインにする
+    cmds:
+      - cp eval/reports/latest.json eval/baseline.json
+
+  eval-compare:
+    desc: ベースラインと比べる（悪化があれば失敗）
+    dir: app/api
+    cmds:
+      - npm run -s eval:compare
+
+  hooks:
+    desc: コミット前・プッシュ前のフックを有効にする（lefthook）
+    cmds:
+      - lefthook install
+
+  lint:
+    desc: リンター一式（Biome・textlint・shellcheck・actionlint・hadolint・tflint・gitleaks）
+    cmds:
+      - npx biome check .
+      - npm run -s lint:text
+      - shellcheck scripts/*.sh
+      - actionlint
+      - hadolint infra/aws-emulator/Dockerfile
+      - cd terraform && tflint --init --config "{{.ROOT_DIR}}/.tflint.hcl" && tflint --recursive --config "{{.ROOT_DIR}}/.tflint.hcl"
+      - gitleaks git --redact --no-banner .
+
+  test:
+    desc: 型チェックとテスト
+    cmds:
+      - npm run typecheck
+      - npm test
+
+  docs-serve:
+    desc: デザインドックをローカルで表示する
+    cmds:
+      - pip install -q -r docs/requirements.txt
+      - mkdocs serve
