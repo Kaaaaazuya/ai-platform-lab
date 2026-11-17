@@ -1,0 +1,4 @@
+# ドキュメントのビルドに使う直接の依存。requirements.txt は pip-compile で作る（ADR-013）
+mkdocs==1.6.1
+mkdocs-material==9.8.1
+pymdown-extensions==12.3

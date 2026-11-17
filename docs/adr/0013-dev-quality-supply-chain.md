@@ -191,4 +191,5 @@ M3までは型チェックとテスト、`terraform fmt` しかなく、リン�
 - PRの検査は、npm か docs（pip の依存がある）が変わったときだけ動く
 - イメージは大きく、毎回取ってくると CI が遅くなるので、週1回にした。ClickHouse と Redis もここで見る
 - 送信される利用状況（telemetry）は切る
+- pip の直接の依存は `docs/requirements.in` に書く。`pip-compile --generate-hashes` で、間接の依存まで固定した `docs/requirements.txt` を作る。Trivy は間接の依存まで見られ、インストールはハッシュで確かめられる。Dependabot も、この2つのファイルをまとめて更新する
 
