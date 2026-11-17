@@ -3,7 +3,7 @@
 国内外の社内AI基盤には「アプリ → AIゲートウェイ → 複数モデル」という共通の構成がある（Uber GenAI Gateway、デジタル庁「源内」、東京海上日動システムズなど）。この構成を、個人のローカル環境で再現して学ぶ。基盤はAWS Emulator（2026年11月11日GA）とOSSで組む。実AWSは差分の検証だけに使う。
 
 !!! info "現在地"
-    ADRは13件で、ADR-001・002・004・005・006・011・013は決定済み。M1〜M3を実装済みで、M4（改善ループ）を実装中。ADR-003・009はMVPのために仮決め（pgvector＋公開技術ドキュメント）。
+    ADRは13件で、ADR-001・002・004・005・006・007・011・013は決定済み。M1〜M4を実装済みで、次はM5（実AWS検証）。ADR-003・009はMVPのために仮決め（pgvector＋公開技術ドキュメント）。
 
 用語は[用語集](glossary.md)を、部品ごとの仕組みは[コンポーネント解説](components/index.md)を参照。
 
@@ -78,7 +78,7 @@ flowchart TB
 | ゲートウェイ | AIゲートウェイ | OpenAI互換API、モデルの振り分け、フォールバック、トークン単位のレート制限、GenAIメトリクスとトレース | ローカル（Envoy AI Gateway、aigw run）。後でK8sに載せる | [002](adr/0002-ai-gateway.md) |
 | アプリ | ガードレール | PIIマスク、プロンプトインジェクション検知 | ローカル（Presidio＋アプリ内の日本向けルール。アプリAPIから呼ぶ） | [005](adr/0005-guardrails.md) |
 | モデル | ローカルLLM | 普段の開発・評価を無料で回す | ローカル（Ollama） | [001](adr/0001-local-llm.md) |
-| モデル | Bedrock | 品質比較、Bedrock Guardrailsの検証 | 実AWS（必要時のみ） | [001](adr/0001-local-llm.md), [007](adr/0007-aws-budget.md) |
+| モデル | Bedrock | Bedrock Guardrailsの検証 | 実AWS（必要時のみ） | [001](adr/0001-local-llm.md), [007](adr/0007-aws-budget.md) |
 | 観測 | OTel Collector | トレース・メトリクス・ログの集約と振り分け | ローカル | [004](adr/0004-observability.md) |
 | 観測 | Langfuse | LLMトレース、評価スコア、プロンプト管理、データセット | ローカル（Postgres、ClickHouse、Redis、S3互換ストレージ） | [004](adr/0004-observability.md) |
 | 観測 | Grafana系 | 死活監視。全体のメトリクス、ログ、トレース（Tempo）、アラート | ローカル | [004](adr/0004-observability.md) |
@@ -228,7 +228,7 @@ OTelで追ったトレースをそのまま改善ループの入力にする。�
 
 開発とCIはローカルにして、費用をかけずに回す。実AWSは「エミュレーターでは確かめられないもの」だけに使う。
 
-| 確かめたいこと | ローカル / PRのCI（AWS Emulator） | 実AWS（mainマージ後のCI/CD） |
+| 確かめたいこと | ローカル / PRのCI（AWS Emulator） | 実AWS（手動で動かすCI/CD） |
 | --- | --- | --- |
 | アプリロジック、S3 / DynamoDB / Lambdaの動作 | できる（サービスごとのFidelityスコアを確認） | スモークテストだけ |
 | IaC（Terraform） | PRごとにapplyして確認（リソースごとに再現度が違う） | plan → 承認 → apply → destroy |
@@ -239,7 +239,7 @@ OTelで追ったトレースをそのまま改善ループの入力にする。�
 
 ### CI/CDパイプライン（ADR-006）
 
-PRではエミュレーターに対して無料で検証し、実AWSへはmainマージ後に手動承認を挟んでだけ出す。同じTerraformコードを、接続先の設定だけ変えて両方に流す。
+PRではエミュレーターに対して無料で検証し、実AWSへは手動で動かしたときに、承認を挟んでだけ出す。同じTerraformコードを、接続先の設定だけ変えて両方に流す。
 
 ```mermaid
 flowchart LR
@@ -249,13 +249,13 @@ flowchart LR
     C --> D["統合テスト<br/>評価ランナー"]
     D --> E["エミュレーター停止<br/>stateごと破棄"]
   end
-  subgraph MAIN["mainマージ後（実AWS・従量課金）"]
+  subgraph MAIN["手動で動かしたとき（実AWS・従量課金）"]
     F["terraform plan<br/>OIDCで認証"] --> G{"手動承認"}
     G -->|承認| H["terraform apply"]
     H --> I["スモークテスト<br/>IAM・Bedrock・Guardrails"]
     I --> J["terraform destroy"]
   end
-  E -->|マージ| F
+  E -->|マージ後、手動で| F
 ```
 
 エミュレーター段のapply成功は「API呼び出しが通る」ことの確認で、IAMの正しさは保証しない。IAMは静的解析と実AWS段で確かめる。
@@ -268,7 +268,7 @@ flowchart LR
 
 - ローカルは0円（Langfuseを含めるとメモリを食うので、マシンスペックに注意）
 - 実AWSは検証のたびに立てて壊す。常時課金のサービス（Kendraなど）は使わない
-- 月の上限額とAWS Budgetsのアラートは未定（[ADR-007](adr/0007-aws-budget.md)）
+- 月の上限は5ドル。50%と80%で通知し、100%で Bedrock を止める（[ADR-007](adr/0007-aws-budget.md)）
 
 ## マイルストーン
 
@@ -282,7 +282,7 @@ flowchart LR
     - 完了条件：用意した攻撃プロンプトとPII入り入力が、トレース上でブロック・マスクされている
 4. **M4 改善ループ**：評価データセット、LLM-as-judge、CIでの回帰評価
     - 完了条件：プロンプトを変えるとCIにスコア差分が出る
-5. **M5 実AWS検証**：mainマージ後のCI/CD（plan → 承認 → apply → destroy）で、Bedrock、Bedrock Guardrails、IAMを実AWSで確かめる
+5. **M5 実AWS検証**：手動で動かすCI/CD（plan → 承認 → apply → destroy）で、Bedrock Guardrails と IAM を実AWSで確かめる（[ADR-007](adr/0007-aws-budget.md)）
     - 完了条件：ローカルとの差分を記録し、リソースを破棄する
 
 ## 未解決事項とADR一覧
