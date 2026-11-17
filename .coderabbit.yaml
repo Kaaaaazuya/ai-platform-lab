@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# CodeRabbit の設定（ADR-013）。お金をかけずに使うため、レビューの回数を絞る
+language: ja-JP
+reviews:
+  profile: chill
+  poem: false
+  auto_review:
+    enabled: true
+    # PRを開いたときだけレビューする。後のプッシュは、必要なときに「@coderabbitai review」で頼む
+    auto_incremental_review: false
+    drafts: false
+    # Dependabot のPRは CI で確かめる（パッチは自動でマージする）
+    ignore_usernames:
+      - "dependabot[bot]"
+  # 人が書いていないファイルは見ない
+  path_filters:
+    - "!**/package-lock.json"
+    - "!eval/reports/**"
