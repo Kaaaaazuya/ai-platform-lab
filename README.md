@@ -23,10 +23,11 @@
 ## クイックスタート
 
 ```bash
-make hooks   # lefthook（要 brew install lefthook gitleaks ほか）
-make env models up tf-apply docs ingest
-make api   # 別ターミナル
-make web   # 別ターミナル → http://localhost:5173
+brew install go-task   # Task（taskfile.dev）。`task` で一覧が出る
+task hooks   # lefthook（要 brew install lefthook gitleaks ほか）
+task env models up tf-apply docs ingest
+task api   # 別ターミナル
+task web   # 別ターミナル → http://localhost:5173
 ```
 
 AWS Emulator の rpm は配布物をダウンロードして `infra/aws-emulator/` に置く（リポジトリには含めない）。

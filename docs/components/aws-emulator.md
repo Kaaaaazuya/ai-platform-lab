@@ -8,7 +8,7 @@ AWSのサービスのAPIを手元のマシンで再現するツール。AWSが20
 
 | 項目 | 内容 |
 | --- | --- |
-| 起動 | `make up`（公式の Dockerfile を元にしたイメージ） |
+| 起動 | `task up`（公式の Dockerfile を元にしたイメージ） |
 | エンドポイント | `https://127.0.0.1:9297`（全サービスで1つ） |
 | 使うサービス | DynamoDB（会話履歴）、S3（原文のドキュメント） |
 | 接続の設定 | `scripts/emulator-env.sh` |
@@ -43,8 +43,8 @@ AWSのサービスのAPIを手元のマシンで再現するツール。AWSが20
 ## 動かして確かめる
 
 ```bash
-make env   # 初回だけ。.env がないと compose が起動しない
-make up
+task env   # 初回だけ。.env がないと compose が起動しない
+task up
 source scripts/emulator-env.sh
 aws dynamodb list-tables
 aws s3 ls

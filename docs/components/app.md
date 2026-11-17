@@ -10,7 +10,7 @@
 | --- | --- |
 | アプリAPI | Node.js（TypeScript）。`app/api` |
 | チャット画面 | Vite＋React。`app/web` |
-| ローカルでの起動 | `make api`（:8787）、`make web`（:5173） |
+| ローカルでの起動 | `task api`（:8787）、`task web`（:5173） |
 | 本番想定の形 | 画面は S3＋CloudFront、APIは API Gateway REST（ストリーミング）＋Lambda |
 | 関連ADR | [ADR-006](../adr/0006-iac-cicd.md)、[ADR-011](../adr/0011-chat-streaming.md) |
 
