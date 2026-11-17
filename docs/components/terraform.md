@@ -8,9 +8,9 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| モジュール | `terraform/modules/chat-store`（DynamoDB の会話履歴テーブルと S3 バケット） |
+| モジュール | `terraform/modules/chat-store`（DynamoDB の会話履歴テーブルと S3 バケット。バケットは公開アクセスをすべて止める） |
 | 環境 | `terraform/envs/local`（AWS Emulator 向け） |
-| 実行 | `make tf-apply` |
+| 実行 | `task tf-apply` |
 | CI | fmt、validate、tflint。変数が設定されていればエミュレーターへの apply とスモークテスト |
 | 関連ADR | [ADR-006](../adr/0006-iac-cicd.md) |
 
@@ -42,9 +42,9 @@ provider のブロックには接続先を書かない。AWS SDK と同じ環境
 ## 動かして確かめる
 
 ```bash
-make env   # 初回だけ
-make up
-make tf-apply
+task env   # 初回だけ
+task up
+task tf-apply
 source scripts/emulator-env.sh && aws dynamodb describe-table --table-name ai-platform-lab-conversations
 ```
 

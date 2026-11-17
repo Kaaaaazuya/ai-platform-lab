@@ -9,8 +9,8 @@
 | 項目 | 内容 |
 | --- | --- |
 | データセット | `eval/rag-cases.jsonl`（OpenTelemetryのドキュメントから作った15問） |
-| 実行 | `make eval`（ローカル。LLMが要る） |
-| 比較 | `make eval-compare`（CIでも動く） |
+| 実行 | `task eval`（ローカル。LLMが要る） |
+| 比較 | `task eval-compare`（CIでも動く） |
 | 結果 | `eval/reports/latest.json`、ベースラインは `eval/baseline.json` |
 | 関連ADR | [ADR-008](../adr/0008-evaluation.md) |
 
@@ -57,16 +57,16 @@ flowchart LR
 ## 動かして確かめる
 
 ```bash
-make eval            # 全15問を流す（数分かかる）
-make eval-compare    # ベースラインと比べる
-make eval-baseline   # 良くなったら、今回をベースラインにする
+task eval            # 全15問を流す（数分かかる）
+task eval-compare    # ベースラインと比べる
+task eval-baseline   # 良くなったら、今回をベースラインにする
 ```
 
 初めて動かすときはベースラインがないので、比較は飛ばされる。次の順で進める。
 
-1. `make eval` を実行する
-2. 最後に表示される `summary` で、`cases` が15、`errors` が0になっていることを確かめる。採点役が失敗しても `make eval` は成功で終わるので、ここで見落とさない
-3. 問題がなければ `make eval-baseline` を実行し、`eval/baseline.json` と `eval/reports/latest.json` をコミットする
+1. `task eval` を実行する
+2. 最後に表示される `summary` で、`cases` が15、`errors` が0になっていることを確かめる。採点役が失敗しても `task eval` は成功で終わるので、ここで見落とさない
+3. 問題がなければ `task eval-baseline` を実行し、`eval/baseline.json` と `eval/reports/latest.json` をコミットする
 
 失敗したケースを含むままベースラインにすると、後で同じように壊れた結果が比較を通ってしまう。
 

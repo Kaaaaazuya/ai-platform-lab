@@ -16,7 +16,8 @@
 | Terraform | tflint | CI |
 | 秘密情報 | gitleaks | コミット前（staged の差分）、CI（全履歴） |
 | npm の依存 | `npm ci`、`npm audit`、`npm audit signatures`、install スクリプトの許可リスト | CI |
-| 依存の更新 | Dependabot（cooldown 7日、種類ごとにまとめる。パッチは CI が通れば自動でマージ） | 月1回（すぐ届くセキュリティ修正は npm と pip だけ。ほかの脆弱性は見張っていない。ClickHouse と Redis は Langfuse に合わせて手で上げる） |
+| 脆弱性と設定ミス | Trivy（依存、イメージ、Terraform・Dockerfile） | CI（依存の High 以上）、週1回（全部。結果は Security タブ） |
+| 依存の更新 | Dependabot（cooldown 7日、種類ごとにまとめる。パッチは CI が通れば自動でマージ） | 月1回（すぐ届くセキュリティ修正は npm と pip だけ。ほかの脆弱性は Trivy で見張る。ClickHouse と Redis は Langfuse に合わせて手で上げる） |
 
 関連ADR：[ADR-013](../adr/0013-dev-quality-supply-chain.md)、文章の決まりは[文章ガイド](../writing-guide.md)
 
@@ -24,7 +25,7 @@
 
 ### コミット前のフック（lefthook）
 
-`make hooks` で有効にすると、`git commit` のたびに変更したファイルだけを検査する。Biome の整形は自動で直して、もう一度ステージに載せる。`git push` の前には型チェックとテストを流す。
+`task hooks` で有効にすると、`git commit` のたびに変更したファイルだけを検査する。Biome の整形は自動で直して、もう一度ステージに載せる。`git push` の前には型チェックとテストを流す。
 
 ### npm のサプライチェーン対策
 
