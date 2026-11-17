@@ -128,6 +128,15 @@ async function main() {
     }
   }
 
+  // 評価の途中で取り込み直されたら、条件の混ざったレポートになるので保存しない
+  const after = await readIndexMeta();
+  if (JSON.stringify(after) !== JSON.stringify(conditions.index)) {
+    await closeDb();
+    throw new Error(
+      "評価の途中でインデックスが取り込み直されました。レポートは保存しません。もう一度 task eval を流してください",
+    );
+  }
+
   const report: Report = {
     createdAt: new Date().toISOString(),
     chatModel: config.chatModel,

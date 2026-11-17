@@ -80,13 +80,16 @@ task eval-baseline   # 良くなったら、今回をベースラインにする
 | モデル | チャット、判定役、埋め込み |
 | 検索 | topK |
 | 取り込み | 取り込んだときの埋め込みモデルとチャンク分割。`task ingest` が DB に記録する |
-| ゲートウェイ | `infra/aigw/config.yaml` の sha256 |
+| ゲートウェイ | 評価したときの `infra/aigw/config.yaml` の sha256 |
 
 `task eval-compare` と `task eval-baseline` は、ベースラインと条件が違う項目を表で出す。
 
 - プロンプトを変えるときは、ファイルを書き換えずに `v2.md` を足し、`RAG_PROMPT_VERSION` で切り替える
 - 版を上げずに中身を変えても、sha256 の違いで気づける
 - トレースにも `rag.prompt.version` と `rag.prompt.sha256` が付くので、Langfuse から版を追える
+- `aigw` は起動時に設定を読む。設定を変えたら `docker compose up -d --force-recreate aigw` で読み直させてから評価する
+- `task ingest` は、取り込み先にないファイルの古いチャンクを消す。途中で失敗すると取り込みの条件は消え、評価は警告を出す
+- 評価の途中で取り込み直すと、レポートは保存されない
 
 ## 学ぶポイント
 

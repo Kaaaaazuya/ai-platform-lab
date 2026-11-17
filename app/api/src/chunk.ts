@@ -12,11 +12,21 @@ export function stripFrontMatter(md: string): { title?: string; body: string } {
 
 export type ChunkOptions = { maxChars: number; overlap: number };
 
-export function chunkMarkdown(md: string, maxChars = 1200, overlap = 150): Chunk[] {
-  // overlap が maxChars 以上だと、下の分割が先に進まない
-  if (!(maxChars > 0) || !(overlap >= 0) || overlap >= maxChars) {
+/** チャンク分割の引数を確かめる。overlap が maxChars 以上だと、分割が先に進まない */
+export function validateChunkOptions(maxChars: number, overlap: number): void {
+  if (
+    !Number.isInteger(maxChars) ||
+    !Number.isInteger(overlap) ||
+    maxChars <= 0 ||
+    overlap < 0 ||
+    overlap >= maxChars
+  ) {
     throw new Error(`invalid chunk options: maxChars=${maxChars} overlap=${overlap}`);
   }
+}
+
+export function chunkMarkdown(md: string, maxChars = 1200, overlap = 150): Chunk[] {
+  validateChunkOptions(maxChars, overlap);
   const { title, body } = stripFrontMatter(md);
   const lines = body
     // Hugo のショートコードなど、本文でない記法を落とす

@@ -26,7 +26,7 @@ export async function ensureSchema(dim = config.embedDim): Promise<void> {
 // 取り込みの条件（埋め込みモデル、チャンク分割）を1行だけ持つ。評価レポートが読む（Issue #33）
 export type IndexMeta = { embedModel: string; chunkMaxChars: number; chunkOverlap: number; ingestedAt: string };
 
-export async function writeIndexMeta(meta: Omit<IndexMeta, "ingestedAt">): Promise<void> {
+async function ensureMetaTable(): Promise<void> {
   await db().query(`
     CREATE TABLE IF NOT EXISTS index_meta (
       id              INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
@@ -35,6 +35,17 @@ export async function writeIndexMeta(meta: Omit<IndexMeta, "ingestedAt">): Promi
       chunk_overlap   INT NOT NULL,
       ingested_at     TIMESTAMPTZ NOT NULL DEFAULT now()
     )`);
+}
+
+/** 取り込みの開始時に呼ぶ。途中で失敗したら条件が残らず、評価は「記録なし」と警告する */
+export async function clearIndexMeta(): Promise<void> {
+  await ensureMetaTable();
+  await db().query("DELETE FROM index_meta");
+}
+
+/** 取り込みがすべて終わってから呼ぶ */
+export async function writeIndexMeta(meta: Omit<IndexMeta, "ingestedAt">): Promise<void> {
+  await ensureMetaTable();
   await db().query(
     `INSERT INTO index_meta (id, embed_model, chunk_max_chars, chunk_overlap, ingested_at)
        VALUES (1, $1, $2, $3, now())
@@ -84,6 +95,12 @@ export async function replaceSource(
   } finally {
     client.release();
   }
+}
+
+/** 今回の取り込み対象にないソースのチャンクを消す。残すと、条件の違うチャンクが検索に混ざる */
+export async function deleteOtherSources(keep: string[]): Promise<number> {
+  const { rowCount } = await db().query("DELETE FROM chunks WHERE NOT (source = ANY($1::text[]))", [keep]);
+  return rowCount ?? 0;
 }
 
 export async function search(embedding: number[], k = config.topK): Promise<Retrieved[]> {

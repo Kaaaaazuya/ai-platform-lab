@@ -75,6 +75,7 @@ describe("chunkMarkdown の引数", () => {
   it("overlap が maxChars 以上なら、無限ループせずに失敗する", () => {
     expect(() => chunkMarkdown("# A\nbody", 100, 100)).toThrow();
     expect(() => chunkMarkdown("# A\nbody", 100, -1)).toThrow();
+    expect(() => chunkMarkdown("# A\nbody", 1200.5, 150)).toThrow();
   });
 });
 
