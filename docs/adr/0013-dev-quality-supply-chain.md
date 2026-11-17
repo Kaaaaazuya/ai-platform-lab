@@ -80,14 +80,14 @@ M3までは型チェックとテスト、`terraform fmt` しかなく、リン�
     - `brew install lefthook gitleaks shellcheck actionlint hadolint tflint`
 - `ignore-scripts=true` のため、ネイティブビルドが必要なパッケージを入れるときは `npm rebuild <pkg>` を明示的に実行する
 - MinIO（`cgr.dev/chainguard/minio`）は無料版が `latest` しか配布していないので固定していない
-- イメージやTerraformの脆弱性スキャン（trivy など）はまだ入れていない
+- イメージやTerraformの脆弱性スキャンは、後から Trivy で入れた（「脆弱性の検査」を参照）
 
 ## 確認すること
 
 - [ ] compose.yaml で固定したタグがレジストリにあるか。タグの一覧はまだ確認できていない
     - aigw `v1.2.1`、otel-collector `0.165.0`、otel-lgtm `0.41.0`、presidio `2.2.366`
 - [x] Dependabot が compose.yaml の `${VAR:-tag}` 形式を更新対象として認識するか → 認識しない。タグを直接書く形に改めた
-- [ ] trivy（イメージ・Terraform・Dockerfile）を入れるか
+- [x] trivy（イメージ・Terraform・Dockerfile）を入れるか → 入れた（「脆弱性の検査」を参照）
 
 ## CIの実行の絞り込み（2026-11-17 追加）
 
@@ -138,7 +138,7 @@ M3までは型チェックとテスト、`terraform fmt` しかなく、リン�
 
 ### 影響
 
-- 頻度に関係なくすぐ届くセキュリティ修正（Dependabot security updates）は、npm と pip だけだ。ほかは、月1回の更新で新しい版に上がることはあるが、脆弱性を見張ってはいない（イメージや Terraform の脆弱性の検査は、まだ入れていない）
+- 頻度に関係なくすぐ届くセキュリティ修正（Dependabot security updates）は、npm と pip だけだ。ほかは、月1回の更新で新しい版に上がる。脆弱性は Trivy で見張る（「脆弱性の検査」を参照）
     - Docker、compose、Terraform は、GitHub がセキュリティ修正のPRに対応していない
     - Actions は、SHAで固定しているので、GitHub が脆弱性の通知（Dependabot alerts）を出さない
 - 変数でタグを上書きする使い方はなくなる。別の版を試したいときは、compose.yaml を書き換えるか、`compose.override.yaml` を使う
@@ -163,4 +163,32 @@ M3までは型チェックとテスト、`terraform fmt` しかなく、リン�
 - `package-lock.json` と評価の結果（`eval/reports/`）は、CodeRabbit に見せない
 - 使った分だけ払うレビューは、CodeRabbit の画面で止める（Subscription and Billing の Usage-based add-on を Off にする）
 - main は、PRを通すことと CI が通ることを必須にする。承認は求めない（一人で開発しているため。パッチの自動マージも、承認なしで動く）。強制プッシュと削除は禁止する
+
+## 脆弱性の検査（2026-11-17 追加）
+
+### 見えた問題
+
+- 脆弱性を見ていたのは `npm audit` だけだった。pip の依存、compose のイメージ、Terraform と Dockerfile の設定ミスは見ていなかった
+- Dependabot の修正PRがすぐ届くのは npm と pip だけで、ClickHouse と Redis は Dependabot の対象から外している
+
+### 選択肢
+
+| 案 | 良い点 | 気になる点 |
+| --- | --- | --- |
+| A. Trivy | 1つのツールで、依存、イメージ、設定ミスを見られる | 2026年3月に、配布物と Action が乗っ取られたことがある |
+| B. Grype と OSV-Scanner | 乗っ取られた記録がない | ツールが2つになり、設定ミスは見られない |
+| C. OSV-Scanner だけ | 一番軽い | イメージを見られない |
+
+### 決めたこと
+
+案Aにした。乗っ取りへの備えとして、Action（trivy-action）は使わない。リリースの版を固定し、SHA-256 を確かめてから入れる。ほかのツールと同じ入れ方だ。
+
+| いつ | 何を見るか | 見つかったとき |
+| --- | --- | --- |
+| PR（ci.yml の `vuln`） | npm と pip の依存の、直せる High 以上の脆弱性 | CI を落とす |
+| 週1回（security-scan.yml） | 依存と設定ミス（Medium 以上）、compose のイメージ（直せる High 以上） | GitHub の Security タブに出す。CI は落とさない |
+
+- PRの検査は、npm か docs（pip の依存がある）が変わったときだけ動く
+- イメージは大きく、毎回取ってくると CI が遅くなるので、週1回にした。ClickHouse と Redis もここで見る
+- 送信される利用状況（telemetry）は切る
 

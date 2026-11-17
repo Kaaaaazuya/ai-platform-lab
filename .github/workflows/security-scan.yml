@@ -1,0 +1,94 @@
+# 脆弱性と設定ミスを週に1回まとめて調べ、GitHub の Security タブに出す（ADR-013）。
+# - 依存（npm と pip）と、Terraform・Dockerfile などの設定ミスを見る
+# - compose.yaml のイメージを1つずつ見る（Dependabot が見張らない ClickHouse や Redis も含む）
+# - CI は落とさない。見つかったものは Security タブで確かめる
+name: security-scan
+
+on:
+  schedule:
+    - cron: "17 18 * * 0" # 毎週月曜 3:17（日本時間）
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  # ci.yml と同じ版とハッシュ（ADR-013）
+  TRIVY_VERSION: 0.76.2
+  TRIVY_SHA256: bc0fc726e017b8927a62b2d3531d7a84ee01769daf5c99ed866dced54089fdbf
+
+jobs:
+  repo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Trivy
+        run: |
+          curl -fsSL -o /tmp/trivy.tgz \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          echo "${TRIVY_SHA256}  /tmp/trivy.tgz" | sha256sum -c -
+          tar -xzf /tmp/trivy.tgz -C /tmp trivy
+      - name: Scan dependencies and misconfigurations
+        run: >-
+          /tmp/trivy fs --scanners vuln,misconfig --severity MEDIUM,HIGH,CRITICAL
+          --format sarif --output trivy-repo.sarif
+          --disable-telemetry --skip-version-check .
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: trivy-repo.sarif
+          category: trivy-repo
+
+  # compose.yaml から、外から取ってくるイメージを並べる（自前で作るイメージは除く）
+  list-images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      images: ${{ steps.list.outputs.images }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: list
+        run: |
+          images=$(grep -E '^\s+image:' compose.yaml | awk '{print $2}' | grep -v '^ai-platform-lab/' | sort -u | jq -R . | jq -cs .)
+          echo "images=${images}" >> "$GITHUB_OUTPUT"
+          echo "$images"
+
+  image:
+    needs: list-images
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJSON(needs.list-images.outputs.images) }}
+    steps:
+      - name: Install Trivy
+        run: |
+          curl -fsSL -o /tmp/trivy.tgz \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          echo "${TRIVY_SHA256}  /tmp/trivy.tgz" | sha256sum -c -
+          tar -xzf /tmp/trivy.tgz -C /tmp trivy
+      - name: Scan image
+        env:
+          IMAGE: ${{ matrix.image }}
+        run: |
+          /tmp/trivy image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed \
+            --format sarif --output trivy-image.sarif \
+            --disable-telemetry --skip-version-check "$IMAGE"
+          # Security タブで区別できるように、イメージ名から分類名を作る
+          echo "CATEGORY=trivy-image-$(tr -c 'a-zA-Z0-9.-' '-' <<<"$IMAGE")" >> "$GITHUB_ENV"
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: trivy-image.sarif
+          category: ${{ env.CATEGORY }}
