@@ -151,11 +151,12 @@ export function parseRequest(body: unknown): ChatRequest {
   if (!b || typeof b.message !== "string" || !b.message.trim()) {
     throw new Error("message is required");
   }
-  // 無い（null・空文字を含む）ときは作る。ある値は形式を確かめる
+  // 無い（undefined・null・空文字）ときだけ作る。それ以外は 0 や false も含めて形式を確かめる
   const given: unknown = b.sessionId;
-  if (given && (typeof given !== "string" || !SESSION_ID_PATTERN.test(given))) {
+  const missing = given === undefined || given === null || given === "";
+  if (!missing && (typeof given !== "string" || !SESSION_ID_PATTERN.test(given))) {
     throw new Error("sessionId is invalid");
   }
-  const sessionId = typeof given === "string" && given ? given : crypto.randomUUID();
+  const sessionId = missing ? crypto.randomUUID() : (given as string);
   return { sessionId, message: b.message.trim().slice(0, 4000) };
 }

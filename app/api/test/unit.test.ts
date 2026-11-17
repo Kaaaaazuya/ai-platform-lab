@@ -76,7 +76,7 @@ describe("parseRequest", () => {
       "eval-2026-11-17T00-00-00-000Z-case_1",
     );
   });
-  it.each(["a\r\nSet-Cookie: x=1", "セッション", "a b", "x".repeat(101), 123])(
+  it.each(["a\r\nSet-Cookie: x=1", "セッション", "a b", "x".repeat(101), 123, 0, false])(
     "ヘッダーに入れられない sessionId を拒否する: %j",
     (sessionId) => {
       expect(() => parseRequest({ message: "hi", sessionId })).toThrow("sessionId is invalid");
