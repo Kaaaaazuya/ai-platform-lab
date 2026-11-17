@@ -69,4 +69,17 @@ describe("parseRequest", () => {
     const r = parseRequest({ message: "hi" });
     expect(r.sessionId).toMatch(/[0-9a-f-]{36}/);
   });
+  it("UUID と評価用の sessionId を受け付ける", () => {
+    const id = "0b9c3a4e-7d1f-4c55-9a60-2f8d1e6b7a10";
+    expect(parseRequest({ message: "hi", sessionId: id }).sessionId).toBe(id);
+    expect(parseRequest({ message: "hi", sessionId: "eval-2026-11-17T00-00-00-000Z-case_1" }).sessionId).toBe(
+      "eval-2026-11-17T00-00-00-000Z-case_1",
+    );
+  });
+  it.each(["a\r\nSet-Cookie: x=1", "セッション", "a b", "x".repeat(101), 123])(
+    "ヘッダーに入れられない sessionId を拒否する: %j",
+    (sessionId) => {
+      expect(() => parseRequest({ message: "hi", sessionId })).toThrow("sessionId is invalid");
+    },
+  );
 });
