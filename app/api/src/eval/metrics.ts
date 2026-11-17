@@ -79,7 +79,9 @@ export function diffConditions(base?: Conditions, cur?: Conditions): string {
 
 /** 取り込み時と今の設定が食い違っていれば、理由を返す */
 export function indexMismatch(c: Conditions): string | null {
-  if (!c.index) return "取り込みの条件が記録されていません。`task ingest` をやり直すと記録されます";
+  if (!c.index) {
+    return "取り込みの条件が記録されていません（途中で失敗したか、古い取り込み）。`task ingest` をやり直してください";
+  }
   if (c.index.embedModel !== c.embedModel) {
     return `取り込み時の埋め込みモデル（${c.index.embedModel}）と今の設定（${c.embedModel}）が違います`;
   }

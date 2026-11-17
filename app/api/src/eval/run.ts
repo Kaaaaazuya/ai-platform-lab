@@ -106,8 +106,12 @@ async function main() {
   ).catch((e) => console.warn(`Langfuse のデータセット登録に失敗: ${(e as Error).message}`));
 
   const conditions = await collectConditions();
+  // 取り込みが途中で失敗した、または条件の記録より前のインデックスなら、評価しない
   const mismatch = indexMismatch(conditions);
-  if (mismatch) console.warn(`注意: ${mismatch}`);
+  if (mismatch) {
+    await closeDb();
+    throw new Error(`${mismatch}。評価は行いません`);
+  }
 
   const results: CaseResult[] = [];
   for (const c of cases.slice(0, limit)) {
