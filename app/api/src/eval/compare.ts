@@ -2,7 +2,7 @@
 // 悪化した指標があれば終了コード1。GitHub Actions では結果をジョブのサマリーに書く。
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { compare, coverageProblem, type Report } from "./metrics.js";
+import { compare, coverageProblem, diffConditions, type Report } from "./metrics.js";
 
 const ROOT = resolve(import.meta.dirname, "../../../..");
 const basePath = resolve(ROOT, process.argv[2] ?? "eval/baseline.json");
@@ -35,6 +35,10 @@ write(
     `ベースライン：${base.createdAt}（${base.chatModel}） / 今回：${cur.createdAt}（${cur.chatModel}）`,
     "",
     markdown,
+    "",
+    "### 評価の条件の違い",
+    "",
+    diffConditions(base.conditions, cur.conditions),
   ].join("\n"),
 );
 process.exit(regressions.length ? 1 : 0);

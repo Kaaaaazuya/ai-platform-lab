@@ -3,9 +3,12 @@ import { describe, expect, it } from "vitest";
 import { buildJudgeMessages, parseJudgement } from "../src/eval/judge.js";
 import {
   type CaseResult,
+  type Conditions,
   compare,
   coverageProblem,
+  diffConditions,
   hasCitation,
+  indexMismatch,
   loadRagCases,
   median,
   retrievalHit,
@@ -138,5 +141,45 @@ describe("assertSafeHost", () => {
 
   it("リモートの http は止める", () => {
     expect(() => assertSafeHost("http://langfuse.example.com")).toThrow();
+  });
+});
+
+const conditions = (over: Partial<Conditions> = {}): Conditions => ({
+  prompt: { name: "rag-chat", version: "v1", sha256: "a".repeat(64) },
+  chatModel: "qwen2.5:7b",
+  judgeModel: "qwen2.5:7b",
+  embedModel: "bge-m3",
+  topK: 4,
+  index: { embedModel: "bge-m3", chunkMaxChars: 1200, chunkOverlap: 150, ingestedAt: "2026-11-17T00:00:00.000Z" },
+  gatewayConfigSha256: "b".repeat(64),
+  ...over,
+});
+
+describe("diffConditions", () => {
+  it("同じ条件なら、そう書く（取り込み日時の違いは無視する）", () => {
+    const cur = conditions({
+      index: { embedModel: "bge-m3", chunkMaxChars: 1200, chunkOverlap: 150, ingestedAt: "2026-11-18T00:00:00.000Z" },
+    });
+    expect(diffConditions(conditions(), cur)).toBe("条件は同じです。");
+  });
+
+  it("違う項目だけを表にする", () => {
+    const cur = conditions({ prompt: { name: "rag-chat", version: "v2", sha256: "c".repeat(64) }, topK: 6 });
+    const md = diffConditions(conditions(), cur);
+    expect(md).toContain("| プロンプト | rag-chat/v1 | rag-chat/v2 |");
+    expect(md).toContain("| topK | 4 | 6 |");
+    expect(md).not.toContain("チャットのモデル");
+  });
+
+  it("古いレポートで条件がなければ、比べられないと書く", () => {
+    expect(diffConditions(undefined, conditions())).toContain("比べられません");
+  });
+});
+
+describe("indexMismatch", () => {
+  it("取り込み時と今の埋め込みモデルが違えば知らせる", () => {
+    expect(indexMismatch(conditions())).toBeNull();
+    expect(indexMismatch(conditions({ embedModel: "other" }))).toContain("bge-m3");
+    expect(indexMismatch(conditions({ index: null }))).toContain("task ingest");
   });
 });

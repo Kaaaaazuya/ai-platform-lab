@@ -23,6 +23,44 @@ export async function ensureSchema(dim = config.embedDim): Promise<void> {
   );
 }
 
+// 取り込みの条件（埋め込みモデル、チャンク分割）を1行だけ持つ。評価レポートが読む（Issue #33）
+export type IndexMeta = { embedModel: string; chunkMaxChars: number; chunkOverlap: number; ingestedAt: string };
+
+export async function writeIndexMeta(meta: Omit<IndexMeta, "ingestedAt">): Promise<void> {
+  await db().query(`
+    CREATE TABLE IF NOT EXISTS index_meta (
+      id              INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+      embed_model     TEXT NOT NULL,
+      chunk_max_chars INT NOT NULL,
+      chunk_overlap   INT NOT NULL,
+      ingested_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`);
+  await db().query(
+    `INSERT INTO index_meta (id, embed_model, chunk_max_chars, chunk_overlap, ingested_at)
+       VALUES (1, $1, $2, $3, now())
+     ON CONFLICT (id) DO UPDATE SET embed_model = $1, chunk_max_chars = $2, chunk_overlap = $3, ingested_at = now()`,
+    [meta.embedModel, meta.chunkMaxChars, meta.chunkOverlap],
+  );
+}
+
+/** 取り込みの条件。取り込みがこの仕組みより前なら null */
+export async function readIndexMeta(): Promise<IndexMeta | null> {
+  const { rows } = await db()
+    .query(`SELECT embed_model, chunk_max_chars, chunk_overlap, ingested_at FROM index_meta WHERE id = 1`)
+    .catch((e: { code?: string }) => {
+      if (e.code === "42P01") return { rows: [] }; // テーブルがまだない
+      throw e;
+    });
+  const r = rows[0];
+  if (!r) return null;
+  return {
+    embedModel: r.embed_model,
+    chunkMaxChars: Number(r.chunk_max_chars),
+    chunkOverlap: Number(r.chunk_overlap),
+    ingestedAt: new Date(r.ingested_at).toISOString(),
+  };
+}
+
 export async function replaceSource(
   source: string,
   rows: { heading: string; content: string; embedding: number[] }[],

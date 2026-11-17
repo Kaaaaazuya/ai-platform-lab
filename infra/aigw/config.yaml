@@ -1,0 +1,138 @@
+# Envoy AI Gateway（aigw run）の設定（ADR-002、Issue #33）
+#
+# 上流の examples/aigw/ollama.yaml（v1.2.1、Apache-2.0）をもとにした。違いは次のとおり。
+#   - 送り先を、コンテナから見たホストの Ollama（host.docker.internal:11434）にした
+#   - Ollama は鍵が要らないので、API キーの Secret と BackendSecurityPolicy を外した
+#   - MCP 用のアクセスログを外した
+#
+# ルーティング・フォールバック・トークン単位のレート制限は、この AIGatewayRoute に足していく。
+# 設定の変更は PR で差分を見る。評価レポートには、このファイルの sha256 が残る。
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: aigw-run
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: aigw-run
+  namespace: default
+spec:
+  gatewayClassName: aigw-run
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 1975
+  infrastructure:
+    parametersRef:
+      group: gateway.envoyproxy.io
+      kind: EnvoyProxy
+      name: envoy-ai-gateway
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: envoy-ai-gateway
+  namespace: default
+spec:
+  logging:
+    level:
+      default: error
+  telemetry:
+    accessLog:
+      settings:
+        - matches:
+            - "request.headers['x-ai-eg-model'] != ''"
+          sinks:
+            - type: File
+              file:
+                path: /dev/stdout
+          format:
+            type: JSON
+            json:
+              # 本文は載せない（ADR-005）。モデル名・トークン数・所要時間だけを出す
+              gen_ai.request.model: "%REQ(X-AI-EG-MODEL)%"
+              gen_ai.response.model: "%DYNAMIC_METADATA(io.envoy.ai_gateway:response_model)%"
+              gen_ai.provider.name: "%DYNAMIC_METADATA(io.envoy.ai_gateway:backend_name)%"
+              gen_ai.usage.input_tokens: "%DYNAMIC_METADATA(io.envoy.ai_gateway:llm_input_token)%"
+              gen_ai.usage.output_tokens: "%DYNAMIC_METADATA(io.envoy.ai_gateway:llm_output_token)%"
+              session.id: "%DYNAMIC_METADATA(io.envoy.ai_gateway:session.id)%"
+              start_time: "%START_TIME%"
+              method: "%REQ(:METHOD)%"
+              request.path: "%REQ(:PATH)%"
+              response_code: "%RESPONSE_CODE%"
+              duration: "%DURATION%"
+              upstream_host: "%UPSTREAM_HOST%"
+              upstream_transport_failure_reason: "%UPSTREAM_TRANSPORT_FAILURE_REASON%"
+---
+apiVersion: aigateway.envoyproxy.io/v1beta1
+kind: AIGatewayRoute
+metadata:
+  name: aigw-run
+  namespace: default
+spec:
+  parentRefs:
+    - name: aigw-run
+      kind: Gateway
+      group: gateway.networking.k8s.io
+  rules:
+    # 今はすべてのモデルを Ollama に送る
+    - matches:
+        - headers:
+            - type: RegularExpression
+              name: x-ai-eg-model
+              value: .*
+      backendRefs:
+        - name: ollama
+          namespace: default
+      timeouts:
+        request: 120s
+  # トークン数を数えてメタデータに入れる（アクセスログとレート制限で使う）
+  llmRequestCosts:
+    - metadataKey: llm_input_token
+      type: InputToken
+    - metadataKey: llm_output_token
+      type: OutputToken
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: Backend
+metadata:
+  name: ollama
+  namespace: default
+spec:
+  endpoints:
+    - fqdn:
+        hostname: host.docker.internal
+        port: 11434
+---
+apiVersion: aigateway.envoyproxy.io/v1beta1
+kind: AIServiceBackend
+metadata:
+  name: ollama
+  namespace: default
+spec:
+  timeouts:
+    request: 3m
+  schema:
+    name: OpenAI
+  backendRef:
+    name: ollama
+    kind: Backend
+    group: gateway.envoyproxy.io
+    namespace: default
+---
+# 既定のバッファ（32KiB）は AI の通信には小さいので広げる（上流の例と同じ）
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: ClientTrafficPolicy
+metadata:
+  name: client-buffer-limit
+  namespace: default
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: aigw-run
+  connection:
+    bufferLimit: 50Mi

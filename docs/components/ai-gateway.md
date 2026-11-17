@@ -10,6 +10,7 @@
 | --- | --- |
 | 製品 | Envoy AI Gateway（2026年に Agent Router へ改名）。CLIは `aigw` |
 | 起動 | `aigw run`（スタンドアロンモード）をコンテナで動かす |
+| 設定 | `infra/aigw/config.yaml`。compose がコンテナに読み込ませる |
 | ポート | 1975（OpenAI互換API、`/v1`）、1064（管理用） |
 | 転送先 | ホストの Ollama（`host.docker.internal:11434`） |
 | 関連ADR | [ADR-001](../adr/0001-local-llm.md)、[ADR-002](../adr/0002-ai-gateway.md) |
@@ -24,7 +25,9 @@ Envoy AI Gateway は、3つの層からなる。
 - Envoy Gateway：Kubernetes の Gateway API で Envoy を設定する部品
 - Envoy AI Gateway：その上に、LLM向けの機能（モデルの振り分け、トークン単位の制限、プロバイダーごとの形式変換）を足したもの
 
-本来は Kubernetes の上で動かすが、`aigw run` を使うと Kubernetes なしで1プロセスとして動く。設定を書かなくても、環境変数 `OPENAI_BASE_URL` に転送先を入れれば、その先へ中継する。
+本来は Kubernetes の上で動かすが、`aigw run` を使うと Kubernetes なしで1プロセスとして動く。設定は Kubernetes 版と同じ形（`AIGatewayRoute` や `AIServiceBackend`）で書く。
+
+設定を書かなくても、環境変数 `OPENAI_BASE_URL` に転送先を入れれば自動で作られる。ただし、それではルーティングを PR でレビューできない。そこで設定をリポジトリに置き、上流の例をもとに書いた。評価レポートには、このファイルの sha256 が残る。
 
 ### 主な機能
 

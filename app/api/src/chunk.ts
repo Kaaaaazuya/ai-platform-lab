@@ -10,7 +10,13 @@ export function stripFrontMatter(md: string): { title?: string; body: string } {
   return { title, body: md.slice(m[0].length) };
 }
 
+export type ChunkOptions = { maxChars: number; overlap: number };
+
 export function chunkMarkdown(md: string, maxChars = 1200, overlap = 150): Chunk[] {
+  // overlap が maxChars 以上だと、下の分割が先に進まない
+  if (!(maxChars > 0) || !(overlap >= 0) || overlap >= maxChars) {
+    throw new Error(`invalid chunk options: maxChars=${maxChars} overlap=${overlap}`);
+  }
   const { title, body } = stripFrontMatter(md);
   const lines = body
     // Hugo のショートコードなど、本文でない記法を落とす
