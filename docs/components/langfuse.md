@@ -27,7 +27,7 @@ LLMアプリの観測と改善のためのOSS。トレース、評価スコア�
 | Redis | 処理待ちのキューとキャッシュ |
 | MinIO（S3互換） | 受け取ったイベントの原本 |
 
-最初の起動時に、環境変数（`LANGFUSE_INIT_*`）でユーザー、組織、プロジェクト、APIキーを作る。`make env` が鍵をランダムに作って `.env` に書く。
+最初の起動時に、環境変数（`LANGFUSE_INIT_*`）でユーザー、組織、プロジェクト、APIキーを作る。`task env` が鍵をランダムに作って `.env` に書く。
 
 ### OTelとの関係
 
@@ -51,7 +51,7 @@ Langfuse は OTLP でspanを受け取り、OTelのトレースIDをそのまま�
 
 1. チャット画面で質問し、回答の下のリンクから Langfuse のトレースを開く
 2. `rag.guard.input`、`rag.retrieve`、ゲートウェイのLLMのspanが1本のトレースにつながっているかを見る
-3. `make eval` の後、データセット `rag-eval` の実験一覧を見る。`make eval` は `.env` の鍵を読み込んでから動く
+3. `task eval` の後、データセット `rag-eval` の実験一覧を見る。`task eval` は `.env` の鍵を読み込んでから動く
 
 ## 学ぶポイント
 

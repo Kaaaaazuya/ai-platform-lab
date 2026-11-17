@@ -11,7 +11,7 @@ Postgres にベクトル型と近傍検索のインデックスを足す拡張�
 | イメージ | `pgvector/pgvector:pg17` |
 | ポート | 127.0.0.1:5433 |
 | データベース | `rag`（Langfuse と同じ Postgres に同居） |
-| 取り込み | `make docs ingest` |
+| 取り込み | `task docs ingest` |
 | 関連ADR | [ADR-003](../adr/0003-vector-store.md) |
 
 ## 仕組み

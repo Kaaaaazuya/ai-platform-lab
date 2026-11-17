@@ -8,6 +8,7 @@ Mac（Apple Silicon）で、ローカル基盤とRAGチャットを動かす手�
 - Node.js 22 以上
 - [Ollama](https://ollama.com/)（ホストで動かす）
 - Terraform 1.9 以上
+- [Task](https://taskfile.dev/)（`brew install go-task`）。操作は `task <名前>` で動かし、`task` だけで一覧が出る
 - AWS Emulator の rpm（`infra/aws-emulator/` に置く。後述）
 - 開発用ツール：`brew install lefthook gitleaks shellcheck actionlint hadolint tflint`
 
@@ -15,26 +16,26 @@ Mac（Apple Silicon）で、ローカル基盤とRAGチャットを動かす手�
 
 ```bash
 # 0. コミット前・プッシュ前のフックを有効にする（ADR-013）
-make hooks
+task hooks
 
 # 1. 秘密情報を生成（.env はコミットしない）
-make env
+task env
 
 # 2. モデルを取得（チャット: qwen2.5:7b、埋め込み: bge-m3）
-make models
+task models
 
 # 3. AWS Emulator の rpm を infra/aws-emulator/ に置いてから起動
-make up
+task up
 
 # 4. DynamoDB / S3 を Terraform でエミュレーターに作る
-make tf-apply
+task tf-apply
 
 # 5. 題材ドキュメント（OpenTelemetry concepts）を取得して取り込む
-make docs ingest
+task docs ingest
 
 # 6. API と画面を起動（別ターミナル）
-make api
-make web
+task api
+task web
 ```
 
 http://localhost:5173 を開いて質問する。回答の下の「トレース」リンクで、そのリクエストのLangfuseトレースが開く。
@@ -43,10 +44,10 @@ http://localhost:5173 を開いて質問する。回答の下の「トレース�
 
 ```bash
 # ガードの判定だけを確かめる（Presidioが起動していれば併用）
-make guard-check
+task guard-check
 
 # アプリAPI経由で流し、トレースIDを表示する
-make guard-check-api
+task guard-check-api
 ```
 
 表示されたトレースをLangfuseで開く。`rag.guard.input` と `rag.guard.output` のspanで、`guard.blocked` と `guard.pii.entities` を確認する。検出があったspanはレベルが WARNING になる。
@@ -55,16 +56,16 @@ make guard-check-api
 
 ```bash
 # 評価データセット（eval/rag-cases.jsonl）を流して採点する
-make eval
+task eval
 
 # ベースラインと比べる。悪化した指標があれば失敗する
-make eval-compare
+task eval-compare
 
 # 良くなったら、今回の結果をベースラインにする
-make eval-baseline
+task eval-baseline
 ```
 
-結果は `eval/reports/latest.json` に書かれる。`.env` に Langfuse の鍵があれば、スコアがトレースに付き、データセット `rag-eval` の実験として残る。プロンプトなどを変えたPRでは、`make eval` の結果もコミットする。`--limit` で一部だけ流した結果は、ベースラインと比べられない（比較は失敗する）。CIがベースラインとの差分をジョブのサマリーに出す。
+結果は `eval/reports/latest.json` に書かれる。`.env` に Langfuse の鍵があれば、スコアがトレースに付き、データセット `rag-eval` の実験として残る。プロンプトなどを変えたPRでは、`task eval` の結果もコミットする。`--limit` で一部だけ流した結果は、ベースラインと比べられない（比較は失敗する）。CIがベースラインとの差分をジョブのサマリーに出す。
 
 ## 依存パッケージを足すとき
 
